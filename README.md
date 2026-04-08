@@ -81,29 +81,35 @@ ci.yml  (Orchestrator)
 ├── java-ci.yml        — Java    · OOP · Functional (Streams)
 ├── rust-ci.yml        — Rust    · Systems · Functional
 ├── cpp-ci.yml         — C/C++   · Procedural · OOP
-├── codeql-analysis.yml — Security scanning (all languages)
-└── dependency-review.yml — CVE scanning on PRs
+├── codeql-analysis.yml — Security scanning (Python, JS/TS, Go, Java, C/C++)
+└── dependency-review.yml — CVE & license scanning on PRs
 ```
 
 ### Supported Languages & Paradigms
 
-| Language | Paradigms | Build Tools | Test Frameworks |
-|---|---|---|---|
-| **Python** | OOP · Functional · Scripting | pip / pyproject | pytest |
-| **JavaScript** | Functional · OOP · Event-driven | npm · yarn · pnpm | Jest · Mocha · Vitest |
-| **TypeScript** | Typed Functional · OOP | npm · yarn · pnpm | Jest · Vitest |
-| **Go** | Procedural · Concurrent | go modules | go test (race detector) |
-| **Java** | OOP · Functional (Streams) | Maven · Gradle | JUnit |
-| **Rust** | Systems · Functional | Cargo | cargo test |
-| **C/C++** | Procedural · OOP | CMake · Make | CTest |
+| Language | Paradigms | Build Tools | Linters | Test Frameworks | Version Matrix |
+|---|---|---|---|---|---|
+| **Python** | OOP · Functional · Scripting | pip · pyproject.toml · setup.py | flake8 · black · isort · mypy | pytest · pytest-cov · pytest-xdist | 3.10 · 3.11 · 3.12 |
+| **JavaScript** | Functional · OOP · Event-driven | npm · yarn · pnpm | ESLint · Prettier | via `npm test` script | Node 18 · 20 · 22 |
+| **TypeScript** | Typed Functional · OOP | npm · yarn · pnpm | ESLint · Prettier · tsc | via `npm test` script | Node 18 · 20 · 22 |
+| **Go** | Procedural · Concurrent | go modules | go vet · staticcheck · golangci-lint | go test (race detector) · benchmarks | 1.21 · 1.22 · stable |
+| **Java** | OOP · Functional (Streams) | Maven · Gradle | Checkstyle (Maven) | JUnit (via Maven/Gradle) | JDK 17 · 21 · 23 |
+| **Rust** | Systems · Functional | Cargo | rustfmt · clippy | cargo test (incl. doc-tests) · cargo-audit | stable · beta · nightly |
+| **C/C++** | Procedural · OOP | CMake · Make | clang-tidy | CTest | GCC · Clang · MSVC · AppleClang |
 
 ### Key Features
 
 - **Auto-detection** — no manual configuration needed; the orchestrator detects which languages exist and only runs applicable workflows.
 - **OS Matrix** — critical jobs run on Ubuntu, Windows, and macOS simultaneously.
-- **Version Matrix** — each language is tested across its current LTS/stable release family.
+- **Version Matrix** — each language is tested across its current LTS/stable release family (see table above).
 - **Race-detector** — Go concurrent code is tested with `-race`.
-- **Sanitizers** — C/C++ builds include AddressSanitizer and UndefinedBehaviorSanitizer.
-- **Security scanning** — CodeQL runs on every push to default branches and weekly on schedule.
-- **Dependency review** — every pull request is scanned for newly introduced CVEs.
+- **Sanitizers** — C/C++ CMake builds include AddressSanitizer (`-fsanitize=address`) and UndefinedBehaviorSanitizer (`-fsanitize=undefined`).
+- **Static analysis** — C/C++ projects are analysed with `clang-tidy`; Go projects with `staticcheck` and `golangci-lint`.
+- **Type checking** — Python projects are checked with `mypy`; TypeScript projects are compiled with `tsc --noEmit`.
+- **MSRV verification** — Rust projects with a `rust-version` field in `Cargo.toml` are compiled on their declared Minimum Supported Rust Version.
+- **Security audit** — Rust dependencies are scanned with `cargo-audit` on every run.
+- **Security scanning** — CodeQL runs on every push/PR to default branches and weekly on a schedule (Python, JS/TS, Go, Java, C/C++). Rust is not supported by CodeQL; it is covered by `cargo-audit` instead.
+- **Dependency review** — every pull request against default branches is scanned for newly introduced CVEs; the build fails on **HIGH** or **CRITICAL** severity findings. Licenses `GPL-2.0`, `GPL-3.0`, and `AGPL-3.0` are denied automatically.
+- **Benchmarks** — Go projects run benchmark functions (`go test -bench`) as a separate job.
+- **Paradigm examples** — Python OOP, functional, and scripting example scripts under `examples/` are executed automatically if present.
 - **Single required check** — `all-checks` aggregates all results into one branch-protection gate.
