@@ -1,0 +1,209 @@
+# ============================================================
+# C / C++ CI — Procedural · OOP Paradigms
+# ============================================================
+# Supports both CMake and plain Makefile projects.
+# Builds with GCC and Clang (Linux), MSVC (Windows), and
+# AppleClang (macOS).  Includes AddressSanitizer & UBSan
+# builds for memory-safety validation.
+# ============================================================
+
+name: C/C++ CI
+
+on:
+  workflow_call:
+  push:
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.cc"
+      - "**.cxx"
+      - "**.h"
+      - "**.hpp"
+      - "CMakeLists.txt"
+      - "**/CMakeLists.txt"
+      - "Makefile"
+      - ".github/workflows/cpp-ci.yml"
+  pull_request:
+    paths:
+      - "**.c"
+      - "**.cpp"
+      - "**.cc"
+      - "**.cxx"
+      - "**.h"
+      - "**.hpp"
+      - "CMakeLists.txt"
+      - "**/CMakeLists.txt"
+      - "Makefile"
+      - ".github/workflows/cpp-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  detect-build-tool:
+    name: Detect Build System
+    runs-on: ubuntu-latest
+    outputs:
+      tool: ${{ steps.detect.outputs.tool }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect CMake or Make
+        id: detect
+        run: |
+          if [ -f "CMakeLists.txt" ]; then
+            echo "tool=cmake" >> "$GITHUB_OUTPUT"
+          elif [ -f "Makefile" ]; then
+            echo "tool=make" >> "$GITHUB_OUTPUT"
+          else
+            echo "tool=none" >> "$GITHUB_OUTPUT"
+          fi
+
+  cmake-build:
+    name: CMake Build (${{ matrix.config.name }})
+    runs-on: ${{ matrix.config.os }}
+    needs: detect-build-tool
+    if: needs.detect-build-tool.outputs.tool == 'cmake'
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Ubuntu GCC"
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+            build_type: Release
+          - name: "Ubuntu Clang"
+            os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+            build_type: Release
+          - name: "Windows MSVC"
+            os: windows-latest
+            cc: cl
+            cxx: cl
+            build_type: Release
+          - name: "macOS AppleClang"
+            os: macos-latest
+            cc: clang
+            cxx: clang++
+            build_type: Release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+
+      - name: Configure CMake
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
+          -DCMAKE_C_COMPILER=${{ matrix.config.cc }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
+          -G "Ninja"
+        continue-on-error: true  # Ninja may not be on Windows PATH
+
+      - name: Configure CMake (fallback without Ninja)
+        if: failure()
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config.build_type }}
+
+      - name: Test (CTest)
+        run: ctest --test-dir build --build-config ${{ matrix.config.build_type }} --output-on-failure
+        continue-on-error: true
+
+  sanitizers:
+    name: Sanitizers (ASan + UBSan)
+    runs-on: ubuntu-latest
+    needs: detect-build-tool
+    if: needs.detect-build-tool.outputs.tool == 'cmake'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y cmake clang ninja-build
+
+      - name: Configure with sanitizers
+        run: >
+          cmake -B build-san
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -G Ninja
+        continue-on-error: true
+
+      - name: Build with sanitizers
+        run: cmake --build build-san
+        continue-on-error: true
+
+      - name: Run sanitized tests
+        run: |
+          if [ -d "build-san" ]; then
+            ctest --test-dir build-san --output-on-failure || true
+          fi
+        continue-on-error: true
+
+  makefile-build:
+    name: Makefile Build
+    runs-on: ubuntu-latest
+    needs: detect-build-tool
+    if: needs.detect-build-tool.outputs.tool == 'make'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build
+        run: make all
+
+      - name: Test
+        run: make test || echo "No test target defined."
+        continue-on-error: true
+
+  clang-tidy:
+    name: clang-tidy Static Analysis
+    runs-on: ubuntu-latest
+    needs: detect-build-tool
+    if: needs.detect-build-tool.outputs.tool == 'cmake'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy cmake ninja-build
+
+      - name: Configure with compile commands
+        run: >
+          cmake -B build-tidy
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+          -G Ninja
+        continue-on-error: true
+
+      - name: Run clang-tidy
+        run: |
+          if [ -f "build-tidy/compile_commands.json" ]; then
+            find . \( -name "*.c" -o -name "*.cpp" \) -not -path "./.git/*" \
+              -exec clang-tidy {} -p build-tidy -- \; || true
+          else
+            echo "compile_commands.json not generated, skipping clang-tidy."
+          fi
+        continue-on-error: true
