@@ -97,7 +97,8 @@ jobs:
 
       - name: ESLint
         run: |
-          if ${{ needs.detect-package-manager.outputs.run_cmd }} lint --if-present 2>/dev/null; then
+          RUN_CMD="${{ needs.detect-package-manager.outputs.run_cmd }}"
+          if $RUN_CMD lint --if-present 2>/dev/null; then
             echo "ESLint passed."
           else
             echo "No lint script found or ESLint not configured."

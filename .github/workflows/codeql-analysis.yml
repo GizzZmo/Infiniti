@@ -50,9 +50,8 @@ jobs:
           if find . -name "*.java" -not -path "./.git/*" | grep -q .; then
             languages+=("java-kotlin")
           fi
-          if find . -name "*.rs" -not -path "./.git/*" | grep -q .; then
-            languages+=("swift")  # placeholder — CodeQL has limited Rust support
-          fi
+          # Note: CodeQL does not currently support Rust; Rust analysis is
+          # handled separately by cargo-audit in rust-ci.yml.
           if find . \( -name "*.c" -o -name "*.cpp" \) -not -path "./.git/*" | grep -q .; then
             languages+=("c-cpp")
           fi
