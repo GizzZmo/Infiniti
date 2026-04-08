@@ -1,0 +1,94 @@
+# ============================================================
+# CodeQL Security Analysis — All Supported Languages
+# ============================================================
+# Runs GitHub's CodeQL engine for all languages detected in
+# the repository.  Scheduled weekly and on every push/PR to
+# the default branch.
+# ============================================================
+
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    # Runs every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  detect-languages:
+    name: Detect Languages for CodeQL
+    runs-on: ubuntu-latest
+    outputs:
+      languages: ${{ steps.detect.outputs.languages }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect CodeQL-supported languages
+        id: detect
+        run: |
+          languages=()
+
+          if find . -name "*.py" -not -path "./.git/*" | grep -q .; then
+            languages+=("python")
+          fi
+          if find . \( -name "*.js" -o -name "*.ts" \) \
+               -not -path "./.git/*" -not -path "./node_modules/*" | grep -q .; then
+            languages+=("javascript-typescript")
+          fi
+          if find . -name "*.go" -not -path "./.git/*" | grep -q .; then
+            languages+=("go")
+          fi
+          if find . -name "*.java" -not -path "./.git/*" | grep -q .; then
+            languages+=("java-kotlin")
+          fi
+          if find . -name "*.rs" -not -path "./.git/*" | grep -q .; then
+            languages+=("swift")  # placeholder — CodeQL has limited Rust support
+          fi
+          if find . \( -name "*.c" -o -name "*.cpp" \) -not -path "./.git/*" | grep -q .; then
+            languages+=("c-cpp")
+          fi
+
+          # Fallback: if nothing detected, analyse as python for demonstration
+          if [ ${#languages[@]} -eq 0 ]; then
+            languages+=("python")
+          fi
+
+          # Output as JSON array for the matrix
+          json=$(printf '%s\n' "${languages[@]}" | jq -R . | jq -cs .)
+          echo "languages=$json" >> "$GITHUB_OUTPUT"
+          echo "Detected languages: $json"
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    needs: detect-languages
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.detect-languages.outputs.languages) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

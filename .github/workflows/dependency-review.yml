@@ -1,0 +1,49 @@
+# ============================================================
+# Dependency Review
+# ============================================================
+# Scans pull requests for newly introduced dependencies with
+# known vulnerabilities (CVEs) across all supported ecosystems:
+# npm, pip, Maven, Gradle, Cargo, Go modules, NuGet, etc.
+# ============================================================
+
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail on any vulnerability with HIGH or CRITICAL severity
+          fail-on-severity: high
+          # Comment on PR with a summary of findings
+          comment-summary-in-pr: always
+          # Deny specific licenses that are incompatible with common open-source projects
+          deny-licenses: >-
+            GPL-2.0,
+            GPL-3.0,
+            AGPL-3.0
+          # Allow packages with no license information (set to false to be strict)
+          allow-licenses: >-
+            MIT,
+            Apache-2.0,
+            BSD-2-Clause,
+            BSD-3-Clause,
+            ISC,
+            MPL-2.0,
+            LGPL-2.1,
+            LGPL-3.0,
+            CC0-1.0,
+            Unlicense

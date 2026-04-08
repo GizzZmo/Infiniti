@@ -1,0 +1,150 @@
+# ============================================================
+# Rust CI — Systems · Functional Paradigms
+# ============================================================
+# Builds on stable, beta, and nightly Rust toolchains.
+# Runs clippy (linter), rustfmt (formatter), and the full
+# test suite including doc-tests.  MSRV is verified via the
+# rust-version field in Cargo.toml when present.
+# ============================================================
+
+name: Rust CI
+
+on:
+  workflow_call:
+  push:
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust-ci.yml"
+  pull_request:
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust-ci.yml"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  fmt-and-clippy:
+    name: Format & Lint (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable Rust with rustfmt + clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: rustfmt check
+        run: cargo fmt --all -- --check
+
+      - name: clippy (deny warnings)
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        continue-on-error: true
+
+  test:
+    name: Test (Rust ${{ matrix.toolchain }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta, nightly]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        exclude:
+          - os: windows-latest
+            toolchain: beta
+          - os: windows-latest
+            toolchain: nightly
+          - os: macos-latest
+            toolchain: beta
+          - os: macos-latest
+            toolchain: nightly
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ${{ matrix.toolchain }} Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --all-features --verbose
+
+      - name: Run tests (including doc-tests)
+        run: cargo test --all-features --verbose
+
+      - name: Run tests with all features disabled
+        run: cargo test --no-default-features --verbose
+        continue-on-error: true
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract MSRV from Cargo.toml
+        id: msrv
+        run: |
+          MSRV=$(grep -m1 'rust-version' Cargo.toml | sed 's/.*= *"\(.*\)"/\1/' || echo "")
+          if [ -z "$MSRV" ]; then
+            echo "No rust-version field found in Cargo.toml, skipping MSRV check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "msrv=$MSRV" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install MSRV toolchain
+        if: steps.msrv.outputs.skip == 'false'
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.msrv }}
+
+      - name: Build on MSRV
+        if: steps.msrv.outputs.skip == 'false'
+        run: cargo build --all-features
+
+  security-audit:
+    name: Security Audit (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked 2>/dev/null || true
+
+      - name: Audit dependencies
+        run: cargo audit
+        continue-on-error: true

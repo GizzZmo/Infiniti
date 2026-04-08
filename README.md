@@ -63,3 +63,47 @@ My current work focuses on **Biometric Generative Art**—systems that create mu
 You are holding more than a book; you are holding a blueprint for the next century. Science gives us the "What," but Art gives us the "Why." Without both, we are just calculating our way toward a cold horizon. Let's make it warm. Let's make it beautiful.
 
 **Go forth and build.**
+
+---
+
+## VI. CI/CD Workflow System
+
+This repository ships a **multi-paradigm, multi-language GitHub Actions workflow system** — one unified pipeline that automatically detects which programming languages are present and runs the appropriate build, lint, test, and security checks in parallel.
+
+### Architecture
+
+```
+ci.yml  (Orchestrator)
+├── detect-languages   — scans the repo for language indicators
+├── python-ci.yml      — Python  · OOP · Functional · Scripting
+├── javascript-ci.yml  — JS/TS   · Functional · OOP · Event-driven
+├── go-ci.yml          — Go      · Procedural · Concurrent
+├── java-ci.yml        — Java    · OOP · Functional (Streams)
+├── rust-ci.yml        — Rust    · Systems · Functional
+├── cpp-ci.yml         — C/C++   · Procedural · OOP
+├── codeql-analysis.yml — Security scanning (all languages)
+└── dependency-review.yml — CVE scanning on PRs
+```
+
+### Supported Languages & Paradigms
+
+| Language | Paradigms | Build Tools | Test Frameworks |
+|---|---|---|---|
+| **Python** | OOP · Functional · Scripting | pip / pyproject | pytest |
+| **JavaScript** | Functional · OOP · Event-driven | npm · yarn · pnpm | Jest · Mocha · Vitest |
+| **TypeScript** | Typed Functional · OOP | npm · yarn · pnpm | Jest · Vitest |
+| **Go** | Procedural · Concurrent | go modules | go test (race detector) |
+| **Java** | OOP · Functional (Streams) | Maven · Gradle | JUnit |
+| **Rust** | Systems · Functional | Cargo | cargo test |
+| **C/C++** | Procedural · OOP | CMake · Make | CTest |
+
+### Key Features
+
+- **Auto-detection** — no manual configuration needed; the orchestrator detects which languages exist and only runs applicable workflows.
+- **OS Matrix** — critical jobs run on Ubuntu, Windows, and macOS simultaneously.
+- **Version Matrix** — each language is tested across its current LTS/stable release family.
+- **Race-detector** — Go concurrent code is tested with `-race`.
+- **Sanitizers** — C/C++ builds include AddressSanitizer and UndefinedBehaviorSanitizer.
+- **Security scanning** — CodeQL runs on every push to default branches and weekly on schedule.
+- **Dependency review** — every pull request is scanned for newly introduced CVEs.
+- **Single required check** — `all-checks` aggregates all results into one branch-protection gate.

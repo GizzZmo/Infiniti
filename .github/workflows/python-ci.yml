@@ -1,0 +1,164 @@
+# ============================================================
+# Python CI — OOP · Functional · Scripting Paradigms
+# ============================================================
+# Runs on multiple Python versions using a matrix strategy.
+# Covers linting (flake8), type-checking (mypy), and testing
+# (pytest) — applicable to all three Python paradigms.
+# ============================================================
+
+name: Python CI
+
+on:
+  workflow_call:
+  push:
+    paths:
+      - "**.py"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/python-ci.yml"
+  pull_request:
+    paths:
+      - "**.py"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/python-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-format:
+    name: Lint & Format (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install linting tools
+        run: pip install flake8 black isort mypy
+
+      - name: Install project dependencies (if present)
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e . 2>/dev/null || true; fi
+
+      - name: flake8 — style & error check
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        continue-on-error: false
+
+      - name: flake8 — complexity & style warnings
+        run: flake8 . --count --exit-zero --max-complexity=12 --max-line-length=100 --statistics
+
+      - name: black — formatting check
+        run: black --check --diff . 2>/dev/null || echo "black not configured, skipping"
+        continue-on-error: true
+
+      - name: isort — import order check
+        run: isort --check-only --diff . 2>/dev/null || echo "isort not configured, skipping"
+        continue-on-error: true
+
+      - name: mypy — static type checking
+        run: mypy . --ignore-missing-imports 2>/dev/null || echo "mypy found issues or is unconfigured"
+        continue-on-error: true
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        exclude:
+          # Reduce matrix size — only run non-Linux on latest Python
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.11"
+          - os: macos-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.11"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-cov pytest-xdist
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e . 2>/dev/null || true; fi
+        shell: bash
+
+      - name: Run tests with coverage
+        run: |
+          if find . -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+            pytest --tb=short --cov=. --cov-report=xml -n auto
+          else
+            echo "No test files found — skipping pytest."
+          fi
+        shell: bash
+
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  # ------------------------------------------------------------------
+  # Paradigm showcase: run example scripts if present in docs/examples
+  # ------------------------------------------------------------------
+  paradigm-examples:
+    name: Paradigm Examples (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Run OOP examples
+        run: |
+          if [ -d "examples/oop" ]; then
+            find examples/oop -name "*.py" -exec python {} \;
+          else
+            echo "No OOP examples directory found."
+          fi
+
+      - name: Run functional examples
+        run: |
+          if [ -d "examples/functional" ]; then
+            find examples/functional -name "*.py" -exec python {} \;
+          else
+            echo "No functional examples directory found."
+          fi
+
+      - name: Run scripting examples
+        run: |
+          if [ -d "examples/scripting" ]; then
+            find examples/scripting -name "*.py" -exec python {} \;
+          else
+            echo "No scripting examples directory found."
+          fi
