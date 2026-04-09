@@ -7,6 +7,7 @@
 
 UCI::UCI() {
     pos.reset();
+    nnue_evaluator = NNUE::create_evaluator();
 }
 
 std::string UCI::move_to_str(Move m) {
@@ -61,7 +62,7 @@ void UCI::cmd_uci() {
     std::cout << "id name Infiniti" << std::endl;
     std::cout << "id author Infiniti Team" << std::endl;
     std::cout << "option name Hash type spin default 16 min 1 max 2048" << std::endl;
-    std::cout << "option name UseNNUE type check default false" << std::endl;
+    std::cout << "option name UseNNUE type check default true" << std::endl;
     std::cout << "option name EvalFile type string default" << std::endl;
     std::cout << "uciok" << std::endl;
 }

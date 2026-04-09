@@ -1,6 +1,8 @@
 #pragma once
 #include "position.h"
 #include "search.h"
+#include "../nnue/nnue.h"
+#include <memory>
 #include <string>
 
 class UCI {
@@ -11,7 +13,8 @@ public:
 private:
     Position pos;
     Searcher searcher;
-    bool use_nnue = false;
+    std::unique_ptr<NNUE::Evaluator> nnue_evaluator;
+    bool use_nnue = true;
     std::string eval_file;
     bool nnue_loaded = false;
 
