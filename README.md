@@ -1,115 +1,160 @@
 # Infiniti
-# The Art of the Infinite: A Manifesto for the Silicon Renaissance
-**By the Architect of Integrated Realities**
 
-Welcome to the bridge between the measurable and the felt. This volume serves as the definitive guide to my methodology—the fusion of rigorous scientific inquiry with the visceral impact of aesthetic mastery. This isn't just about code or circuits; it's about the soul of the machine.
+A UCI chess engine written in C++20, featuring bitboard-based move generation, a tapered hand-crafted evaluator with NNUE support, and an alpha-beta search with modern pruning techniques.
 
 ---
 
-## I. The Philosophy: "The Ghost in the Geometry"
-In my laboratories, we believe that a formula is just a poem written in the language of the universe. To create a product that changes the world, one must treat the user interface as a canvas and the backend architecture as a cathedral.
+## Features
 
-* **Symmetry as Function:** If a codebase is messy, the output will feel "heavy." We strive for algorithmic elegance.
-* **The Sensory Quotient (SQ):** Every technical specification must be balanced by its sensory impact. How does the data *look* when it moves?
-
----
-
-## II. Product Guidelines: The Research-Grade Standard
-Every physical and digital product released under my name adheres to the **Triple-S Tier** of excellence:
-
-### 1. Structural Integrity (The Science)
-Before beauty comes stability. My products utilize materials and logic gates that push the boundaries of physics.
-> "If the math isn't beautiful, the machine will eventually fail."
-
-### 2. Semantic Resonance (The Art)
-We don't just build tools; we build symbols. Every hardware curve is designed using the Golden Ratio, ensuring that the object feels "meant to be" in the human hand.
-
-### 3. Sustainable Legacy
-Every GitHub repository and hardware blueprint must be open-ended. We build systems that learn, evolve, and—eventually—teach.
+- **UCI protocol** — fully compatible with any UCI-capable chess GUI (Arena, Cute Chess, BanksiaGUI, etc.)
+- **Bitboard representation** — all position data stored as 64-bit integers for fast bulk operations
+- **Legal move generator** — generates all legal moves including en passant, castling, and promotions
+- **Iterative deepening** — searches progressively deeper and returns the best move found so far if time runs out
+- **Negamax with alpha-beta** — Principal Variation Search (PVS) for efficient tree pruning
+- **Null move pruning** — skips the side to move to detect cut-nodes early (R = 2 or 3)
+- **Late Move Reductions (LMR)** — reduces the search depth for moves that are unlikely to be best
+- **Futility pruning** — skips quiet moves near the horizon when the position is far below alpha
+- **Quiescence search** — extends the search through capture sequences to avoid the horizon effect
+- **Transposition table** — caches previously searched positions to avoid redundant work
+- **Move ordering** — TT move, MVV-LVA captures, killer moves, history heuristic
+- **Tapered evaluation** — piece-square tables with smooth middlegame/endgame interpolation
+- **Bishop pair bonus** and **passed pawn bonus**
+- **NNUE support** — optional HalfKP neural network evaluator loaded at runtime
 
 ---
 
-## III. The Developer's Codex: GitHub Best Practices
-For those contributing to my repositories, you are not just "devs"; you are digital artisans. Follow these non-negotiables:
+## Requirements
 
-| Requirement | Standard | Philosophy |
-| :--- | :--- | :--- |
-| **Commit Messages** | Descriptive & Lyrical | Treat every commit as a journal entry in the history of progress. |
-| **Documentation** | LaTeX & Visual Flowcharts | Use $$E = mc^2$$ levels of precision. If a child can't understand the "Why," the "How" is useless. |
-| **Refactoring** | Minimalist | Delete code until only the essential remains. Perfection is reached when there is nothing left to take away. |
+| Tool | Minimum version |
+|------|----------------|
+| C++ compiler | GCC 10 / Clang 12 / MSVC 19.29 (C++20 required) |
+| CMake | 3.16 |
 
 ---
 
-## IV. Core Methodology: The "Heuristic Heart"
-To innovate like we do, one must master the **Recursive Design Loop**:
+## Building
 
-1.  **Observe:** Identify a human friction point.
-2.  **Quantify:** Map the friction using $f(x)$ variables.
-3.  **Humanize:** Ask, "How would Da Vinci solve this with a supercomputer?"
-4.  **Execute:** Build with the precision of a surgeon and the flair of a street artist.
+```bash
+# Configure (release build)
+cmake -B build -DCMAKE_BUILD_TYPE=Release
 
----
+# Compile
+cmake --build build --config Release -j$(nproc)
 
-## V. The Repository of the Future
-My current work focuses on **Biometric Generative Art**—systems that create music and visuals based on the observer's neural oscillations.
+# The binary is at:
+#   build/infiniti        (Linux/macOS)
+#   build/Release/infiniti.exe  (Windows)
+```
 
-* **Repo Name:** `Project-Aura-v4.2`
-* **Status:** Research-Grade / Experimental
-* **Objective:** To prove that technology is not the opposite of nature, but its ultimate expression.
-
----
-
-### A Final Note to the Reader
-You are holding more than a book; you are holding a blueprint for the next century. Science gives us the "What," but Art gives us the "Why." Without both, we are just calculating our way toward a cold horizon. Let's make it warm. Let's make it beautiful.
-
-**Go forth and build.**
+For a debug build with sanitizers enabled by default in the CI, replace `Release` with `Debug`.
 
 ---
 
-## VI. CI/CD Workflow System
+## Usage
 
-This repository ships a **multi-paradigm, multi-language GitHub Actions workflow system** — one unified pipeline that automatically detects which programming languages are present and runs the appropriate build, lint, test, and security checks in parallel.
+### With a GUI
 
-### Architecture
+Open your chess GUI, add a new engine, and point it at the compiled `infiniti` binary. The engine speaks the standard UCI protocol, so no further configuration is needed.
+
+### Command line (UCI shell)
+
+```
+$ ./infiniti
+uci
+id name Infiniti
+id author Infiniti Team
+option name Hash type spin default 16 min 1 max 2048
+option name UseNNUE type check default true
+option name EvalFile type string default
+uciok
+isready
+readyok
+position startpos moves e2e4 e7e5
+go movetime 1000
+info depth 1 seldepth 1 score cp 27 nodes 21 nps 21000 time 1 pv g1f3
+...
+bestmove g1f3
+quit
+```
+
+---
+
+## UCI Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `Hash` | spin | 16 | Transposition table size in megabytes (1 – 2048) |
+| `UseNNUE` | check | true | Enable the NNUE neural network evaluator |
+| `EvalFile` | string | *(empty)* | Path to an NNUE network file (`.nnue`) |
+
+---
+
+## Project Structure
+
+```
+Infiniti/
+├── src/
+│   ├── types.h          # Core types: Bitboard, Move, Square, Color, PieceType …
+│   ├── bitboard.h/.cpp  # Bitboard utilities and attack tables
+│   ├── position.h/.cpp  # Board state, FEN parsing, make/unmake move, Zobrist hashing
+│   ├── movegen.h/.cpp   # Legal move and capture generation
+│   ├── eval.h/.cpp      # Tapered HCE with PSTs, bishop pair, passed pawns
+│   ├── tt.h             # Transposition table
+│   ├── search.h/.cpp    # Iterative deepening, negamax, PVS, pruning, move ordering
+│   ├── uci.h/.cpp       # UCI protocol loop and option handling
+│   └── main.cpp         # Entry point
+├── nnue/
+│   ├── nnue.h/.cpp            # Public NNUE evaluator interface
+│   ├── nnue_file.h/.cpp       # Binary network file loading
+│   ├── features_halfkp.h/.cpp # HalfKP feature set
+│   ├── accumulator.h/.cpp     # Incremental accumulator
+│   └── network.h/.cpp         # Forward pass (L1→L2→L3→output)
+├── CMakeLists.txt
+├── LICENSE
+├── ABOUT.md
+└── docs/
+    ├── building.md
+    ├── usage.md
+    ├── uci.md
+    ├── search.md
+    ├── evaluation.md
+    ├── nnue.md
+    └── contributing.md
+```
+
+---
+
+## Documentation
+
+Full documentation lives in the [`docs/`](docs/) directory:
+
+| Page | Contents |
+|------|----------|
+| [Building](docs/building.md) | Detailed build instructions for all platforms |
+| [Usage](docs/usage.md) | How to use the engine with GUIs and on the command line |
+| [UCI Reference](docs/uci.md) | Complete UCI command reference |
+| [Search](docs/search.md) | Search algorithm internals |
+| [Evaluation](docs/evaluation.md) | Hand-crafted evaluator internals |
+| [NNUE](docs/nnue.md) | NNUE architecture and usage |
+| [Contributing](docs/contributing.md) | How to contribute |
+
+---
+
+## CI/CD
+
+This repository includes a **multi-language GitHub Actions pipeline** that detects which programming languages are present and runs the appropriate build, lint, test, and security checks in parallel.
 
 ```
 ci.yml  (Orchestrator)
-├── detect-languages   — scans the repo for language indicators
-├── python-ci.yml      — Python  · OOP · Functional · Scripting
-├── javascript-ci.yml  — JS/TS   · Functional · OOP · Event-driven
-├── go-ci.yml          — Go      · Procedural · Concurrent
-├── java-ci.yml        — Java    · OOP · Functional (Streams)
-├── rust-ci.yml        — Rust    · Systems · Functional
-├── cpp-ci.yml         — C/C++   · Procedural · OOP
-├── codeql-analysis.yml — Security scanning (Python, JS/TS, Go, Java, C/C++)
-└── dependency-review.yml — CVE & license scanning on PRs
+├── cpp-ci.yml          — CMake · clang-tidy · CTest (GCC, Clang, MSVC, AppleClang)
+├── codeql-analysis.yml — Security scanning (C/C++, and others if added)
+└── dependency-review.yml — CVE & licence scanning on pull requests
 ```
 
-### Supported Languages & Paradigms
+A single `all-checks` job aggregates all results into one branch-protection gate.
 
-| Language | Paradigms | Build Tools | Linters | Test Frameworks | Version Matrix |
-|---|---|---|---|---|---|
-| **Python** | OOP · Functional · Scripting | pip · pyproject.toml · setup.py | flake8 · black · isort · mypy | pytest · pytest-cov · pytest-xdist | 3.10 · 3.11 · 3.12 |
-| **JavaScript** | Functional · OOP · Event-driven | npm · yarn · pnpm | ESLint · Prettier | via `npm test` script | Node 18 · 20 · 22 |
-| **TypeScript** | Typed Functional · OOP | npm · yarn · pnpm | ESLint · Prettier · tsc | via `npm test` script | Node 18 · 20 · 22 |
-| **Go** | Procedural · Concurrent | go modules | go vet · staticcheck · golangci-lint | go test (race detector) · benchmarks | 1.21 · 1.22 · stable |
-| **Java** | OOP · Functional (Streams) | Maven · Gradle | Checkstyle (Maven) | JUnit (via Maven/Gradle) | JDK 17 · 21 · 23 |
-| **Rust** | Systems · Functional | Cargo | rustfmt · clippy | cargo test (incl. doc-tests) · cargo-audit | stable · beta · nightly |
-| **C/C++** | Procedural · OOP | CMake · Make | clang-tidy | CTest | GCC · Clang · MSVC · AppleClang |
+---
 
-### Key Features
+## License
 
-- **Auto-detection** — no manual configuration needed; the orchestrator detects which languages exist and only runs applicable workflows.
-- **OS Matrix** — critical jobs run on Ubuntu, Windows, and macOS simultaneously.
-- **Version Matrix** — each language is tested across its current LTS/stable release family (see table above).
-- **Race-detector** — Go concurrent code is tested with `-race`.
-- **Sanitizers** — C/C++ CMake builds include AddressSanitizer (`-fsanitize=address`) and UndefinedBehaviorSanitizer (`-fsanitize=undefined`).
-- **Static analysis** — C/C++ projects are analysed with `clang-tidy`; Go projects with `staticcheck` and `golangci-lint`.
-- **Type checking** — Python projects are checked with `mypy`; TypeScript projects are compiled with `tsc --noEmit`.
-- **MSRV verification** — Rust projects with a `rust-version` field in `Cargo.toml` are compiled on their declared Minimum Supported Rust Version.
-- **Security audit** — Rust dependencies are scanned with `cargo-audit` on every run.
-- **Security scanning** — CodeQL runs on every push/PR to default branches and weekly on a schedule (Python, JS/TS, Go, Java, C/C++). Rust is not supported by CodeQL; it is covered by `cargo-audit` instead.
-- **Dependency review** — every pull request against default branches is scanned for newly introduced CVEs; the build fails on **HIGH** or **CRITICAL** severity findings. Licenses `GPL-2.0`, `GPL-3.0`, and `AGPL-3.0` are denied automatically.
-- **Benchmarks** — Go projects run benchmark functions (`go test -bench`) as a separate job.
-- **Paradigm examples** — Python OOP, functional, and scripting example scripts under `examples/` are executed automatically if present.
-- **Single required check** — `all-checks` aggregates all results into one branch-protection gate.
+[MIT](LICENSE) © 2026 Jon Arve Ovesen
