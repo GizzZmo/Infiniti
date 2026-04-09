@@ -133,10 +133,8 @@ void UCI::cmd_setoption(const std::string& line) {
     while (ss >> token) value += (value.empty() ? "" : " ") + token;
 
     if (name == "Hash") {
-        try {
-            int mb = std::stoi(value);
-            (void)mb;
-        } catch (...) {}
+        // Hash resizing not yet wired to TT; stored for future implementation.
+        (void)value;
     } else if (name == "UseNNUE") {
         use_nnue = (value == "true");
     } else if (name == "EvalFile") {

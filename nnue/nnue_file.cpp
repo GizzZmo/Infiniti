@@ -17,7 +17,7 @@ std::string load_nnue_file(const std::string& path) {
     std::streamsize file_size = f.tellg();
     if (file_size < 16) return "File too small";
 
-    std::cerr << "info string NNUE header read successfully, format version "
+    std::cout << "info string NNUE header read successfully, format version "
               << header.version << std::endl;
     return "";
 }

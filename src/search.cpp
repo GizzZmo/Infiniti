@@ -151,7 +151,6 @@ int Searcher::negamax(Position& pos, int depth, int alpha, int beta, int ply, bo
 
         StateInfo si;
         pos.make_move(m, si);
-        node_count++;
 
         int new_depth = depth - 1;
         if (pos.in_check()) new_depth++;
@@ -208,6 +207,7 @@ int Searcher::negamax(Position& pos, int depth, int alpha, int beta, int ply, bo
 }
 
 void Searcher::print_info(int depth, int score, const std::vector<Move>& pv) const {
+    // UCI info is printed inline in go(); this stub is reserved for future use.
     (void)depth; (void)score; (void)pv;
 }
 
