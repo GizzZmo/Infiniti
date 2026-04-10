@@ -48,3 +48,10 @@ inline PieceType promo_type(Move m) { return PieceType((m >> 14) & 7); }
 inline Color operator~(Color c) { return Color(c ^ 1); }
 inline Square operator+(Square s, int d) { return Square(int(s) + d); }
 inline Square& operator++(Square& s) { return s = Square(int(s) + 1); }
+
+// Maps a Piece value to its standard ASCII character (uppercase = white, lowercase = black).
+// Index layout: [0]='.', [1-6]=PNBRQK, [7-8]=unused, [9-14]=pnbrqk
+inline char piece_to_char(Piece p) {
+    constexpr char kChars[] = ".PNBRQKxxpnbrqk";
+    return kChars[p];
+}

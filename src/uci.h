@@ -26,6 +26,7 @@ private:
     void cmd_setoption(const std::string& line);
     void cmd_stop();
     void cmd_quit();
+    void cmd_d();
 
     static std::string move_to_str(Move m);
     static Move str_to_move(const Position& pos, const std::string& s);

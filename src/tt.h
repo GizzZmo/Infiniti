@@ -29,6 +29,16 @@ public:
         std::fill(table.begin(), table.end(), TTEntry{});
     }
 
+    // Returns an estimate of the TT occupancy in permille (0–1000).
+    int hashfull() const {
+        size_t sample = std::min(num_entries, size_t(1000));
+        int count = 0;
+        for (size_t i = 0; i < sample; i++) {
+            if ((table[i].bound_and_pv & 3) != TT_NONE) count++;
+        }
+        return static_cast<int>(count * 1000 / sample);
+    }
+
     TTEntry* probe(uint64_t key, bool& found) const {
         size_t idx = key % num_entries;
         TTEntry* e = const_cast<TTEntry*>(&table[idx]);

@@ -86,6 +86,37 @@ Stops the current search immediately. The engine outputs `bestmove` with the bes
 
 ---
 
+### `d`
+
+Prints an ASCII board diagram of the current position together with its FEN string and Zobrist key. Useful for verifying the position when working from the command line.
+
+**Example output:**
+```
+ +---+---+---+---+---+---+---+---+
+ | r | n | b | q | k | b | n | r | 8
+ +---+---+---+---+---+---+---+---+
+ | p | p | p | p | p | p | p | p | 7
+ +---+---+---+---+---+---+---+---+
+ | . | . | . | . | . | . | . | . | 6
+ +---+---+---+---+---+---+---+---+
+ | . | . | . | . | . | . | . | . | 5
+ +---+---+---+---+---+---+---+---+
+ | . | . | . | . | . | . | . | . | 4
+ +---+---+---+---+---+---+---+---+
+ | . | . | . | . | . | . | . | . | 3
+ +---+---+---+---+---+---+---+---+
+ | P | P | P | P | P | P | P | P | 2
+ +---+---+---+---+---+---+---+---+
+ | R | N | B | Q | K | B | N | R | 1
+ +---+---+---+---+---+---+---+---+
+   a   b   c   d   e   f   g   h
+
+Fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+Key: 6add1ee639f4e926
+```
+
+---
+
 ### `setoption name <name> value <value>`
 
 Sets an engine option. See [Options](#options) below.
@@ -110,7 +141,7 @@ Exits the engine process.
 
 Size of the transposition table in megabytes. Larger values reduce TT collisions at the cost of more memory usage. Typical values: 64–512 MB for analysis, 16–128 MB for engine-vs-engine play.
 
-> **Note:** Hash resizing takes effect at the next `ucinewgame` or at engine start-up.
+> **Note:** Hash resizing takes effect immediately when the option is set.
 
 ---
 
@@ -150,8 +181,9 @@ info string NNUE load failed: cannot open file
 | `depth` | Completed search depth (plies) |
 | `seldepth` | Maximum selective depth reached during quiescence search |
 | `score cp <n>` | Score in centipawns from the side to move's perspective |
-| `score mate <n>` | Mate in *n* moves (not yet emitted; planned) |
+| `score mate <n>` | Forced checkmate in *n* moves; negative means the engine is being mated |
 | `nodes` | Total nodes searched |
 | `nps` | Nodes per second |
+| `hashfull` | Transposition table occupancy in permille (0–1000) |
 | `time` | Elapsed search time in milliseconds |
 | `pv` | Principal variation (sequence of best moves) |
