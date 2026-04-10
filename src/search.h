@@ -29,6 +29,8 @@ public:
     void set_position(const Position& pos) { root_pos = pos; }
     SearchResult go(const SearchLimits& limits);
     void stop() { stop_flag = true; }
+    void new_game() { tt.clear(); clear_history(); }
+    void resize_tt(size_t mb) { tt.resize(mb); }
 
 private:
     Position root_pos;

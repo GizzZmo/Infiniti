@@ -1,6 +1,7 @@
 #include "uci.h"
 #include "movegen.h"
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -73,6 +74,7 @@ void UCI::cmd_isready() {
 
 void UCI::cmd_ucinewgame() {
     pos.reset();
+    searcher.new_game();
 }
 
 void UCI::cmd_position(const std::string& line) {
@@ -134,8 +136,12 @@ void UCI::cmd_setoption(const std::string& line) {
     while (ss >> token) value += (value.empty() ? "" : " ") + token;
 
     if (name == "Hash") {
-        // Hash resizing not yet wired to TT; stored for future implementation.
-        (void)value;
+        try {
+            size_t mb = static_cast<size_t>(std::stoi(value));
+            if (mb < 1) mb = 1;
+            if (mb > 2048) mb = 2048;
+            searcher.resize_tt(mb);
+        } catch (...) {}
     } else if (name == "UseNNUE") {
         use_nnue = (value == "true");
     } else if (name == "EvalFile") {
@@ -159,6 +165,22 @@ void UCI::cmd_stop() {
 
 void UCI::cmd_quit() {}
 
+void UCI::cmd_d() {
+    std::cout << "\n +---+---+---+---+---+---+---+---+\n";
+    for (int r = 7; r >= 0; r--) {
+        std::cout << " |";
+        for (int f = 0; f < 8; f++) {
+            Piece p = pos.piece_on(make_square(File(f), Rank(r)));
+            std::cout << " " << piece_to_char(p) << " |";
+        }
+        std::cout << " " << (r + 1) << "\n";
+        std::cout << " +---+---+---+---+---+---+---+---+\n";
+    }
+    std::cout << "   a   b   c   d   e   f   g   h\n\n";
+    std::cout << "Fen: " << pos.fen() << "\n";
+    std::cout << "Key: " << std::hex << pos.hash() << std::dec << "\n";
+}
+
 void UCI::loop() {
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -174,7 +196,9 @@ void UCI::loop() {
         else if (cmd == "go") cmd_go(line);
         else if (cmd == "setoption") cmd_setoption(line);
         else if (cmd == "stop") cmd_stop();
+        else if (cmd == "d") cmd_d();
         else if (cmd == "quit") break;
+        else std::cout << "info string Unknown command: " << cmd << std::endl;
 
         std::cout.flush();
     }

@@ -178,8 +178,7 @@ std::string Position::fen() const {
                 empty++;
             } else {
                 if (empty) { result += char('0' + empty); empty = 0; }
-                static const char pchars[] = ".PNBRQKxpnbrqk";
-                result += pchars[p];
+                result += piece_to_char(p);
             }
         }
         if (empty) result += char('0' + empty);

@@ -272,10 +272,20 @@ SearchResult Searcher::go(const SearchLimits& limits) {
         int64_t nps = elapsed_ms > 0 ? (node_count * 1000 / elapsed_ms) : 0;
 
         std::cout << "info depth " << depth
-                  << " seldepth " << seldepth
-                  << " score cp " << score
-                  << " nodes " << node_count
+                  << " seldepth " << seldepth;
+
+        if (std::abs(score) >= MATE_SCORE - MAX_PLY) {
+            // Convert internal score (MATE_SCORE - plies) to UCI moves-to-mate:
+            // plies_to_mate = MATE_SCORE - abs(score); moves = ceil(plies / 2)
+            int mate_in = (score > 0 ? 1 : -1) * (MATE_SCORE - std::abs(score) + 1) / 2;
+            std::cout << " score mate " << mate_in;
+        } else {
+            std::cout << " score cp " << score;
+        }
+
+        std::cout << " nodes " << node_count
                   << " nps " << nps
+                  << " hashfull " << tt.hashfull()
                   << " time " << elapsed_ms
                   << " pv";
         for (Move m : pv) {

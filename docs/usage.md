@@ -80,6 +80,15 @@ position startpos
 go depth 12
 ```
 
+### Display the current board
+
+```
+position startpos moves e2e4 e7e5
+d
+```
+
+This prints an ASCII diagram, the FEN, and the Zobrist key — useful for verifying the position when working from the command line.
+
 ---
 
 ## Time Management
