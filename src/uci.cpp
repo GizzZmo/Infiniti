@@ -145,9 +145,12 @@ void UCI::cmd_go(const std::string& line) {
         else if (token == "infinite") limits.infinite = true;
     }
 
-    // Pass game history (excluding the current root position, which is last element)
-    std::vector<uint64_t> hist(game_history.begin(),
-                               game_history.size() > 1 ? game_history.end() - 1 : game_history.end());
+    // Pass game history excluding the current root position (last element).
+    // Positions before an irreversible move cannot recur, but we pass all of them
+    // and let the search use the halfmove clock to limit comparisons.
+    std::vector<uint64_t> hist;
+    if (!game_history.empty())
+        hist.assign(game_history.begin(), game_history.end() - 1);
 
     searcher.set_position(pos);
     searcher.set_history(hist);

@@ -7,6 +7,9 @@
 #include <vector>
 #include <cstring>
 
+// Default number of expected moves remaining when 'movestogo' is not provided.
+static constexpr int DEFAULT_MOVES_TO_GO = 25;
+
 const int Searcher::MVV_LVA[7][7] = {
     {0,0,0,0,0,0,0},
     {0,15,14,13,12,11,10},
@@ -108,9 +111,14 @@ int Searcher::negamax(Position& pos, int depth, int alpha, int beta, int ply, bo
         for (int i = ply - 2; i >= 0; i -= 2) {
             if (search_path[i] == h) return 0;
         }
-        // Check pre-search game history
-        for (const uint64_t gh : game_history) {
-            if (gh == h) return 0;
+        // Check pre-search game history. Only positions within the halfmove-clock
+        // window can possibly recur (an irreversible move resets the clock and
+        // eliminates any prior repetition possibility).
+        int hmclock = pos.halfmove_clock();
+        size_t gh_size = game_history.size();
+        size_t start = (gh_size > (size_t)hmclock) ? gh_size - hmclock : 0;
+        for (size_t i = start; i < gh_size; i++) {
+            if (game_history[i] == h) return 0;
         }
     }
     search_path[ply] = pos.hash();
@@ -249,7 +257,7 @@ SearchResult Searcher::go(const SearchLimits& limits) {
             int time_left = (stm == WHITE) ? limits.wtime_ms : limits.btime_ms;
             int inc = (stm == WHITE) ? limits.winc_ms : limits.binc_ms;
             if (time_left > 0) {
-                int divisor = (limits.movestogo > 0) ? (limits.movestogo + 1) : 25;
+                int divisor = (limits.movestogo > 0) ? (limits.movestogo + 1) : DEFAULT_MOVES_TO_GO;
                 time_limit_ms = time_left / divisor + inc / 2;
                 if (time_limit_ms > time_left - 50)
                     time_limit_ms = std::max(time_left - 50, 10);
