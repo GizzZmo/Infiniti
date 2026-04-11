@@ -7,6 +7,9 @@
 #include <vector>
 #include <cstring>
 
+// Default number of expected moves remaining when 'movestogo' is not provided.
+static constexpr int DEFAULT_MOVES_TO_GO = 25;
+
 const int Searcher::MVV_LVA[7][7] = {
     {0,0,0,0,0,0,0},
     {0,15,14,13,12,11,10},
@@ -24,6 +27,13 @@ Searcher::Searcher() : tt(16) {
 void Searcher::clear_history() {
     memset(killers, 0, sizeof(killers));
     memset(history, 0, sizeof(history));
+}
+
+int Searcher::do_evaluate(const Position& pos) const {
+    if (nnue_eval && nnue_eval->is_loaded()) {
+        return nnue_eval->evaluate(pos);
+    }
+    return evaluate(pos);
 }
 
 bool Searcher::time_up() const {
@@ -59,7 +69,7 @@ int Searcher::quiescence(Position& pos, int alpha, int beta, int ply) {
     if (time_up()) return 0;
     if (ply > seldepth) seldepth = ply;
 
-    int stand_pat = evaluate(pos);
+    int stand_pat = do_evaluate(pos);
     if (stand_pat >= beta) return beta;
     if (stand_pat > alpha) alpha = stand_pat;
 
@@ -91,7 +101,27 @@ int Searcher::negamax(Position& pos, int depth, int alpha, int beta, int ply, bo
     node_count++;
     if (ply > seldepth) seldepth = ply;
 
+    // Draw detection: 50-move rule
     if (ply > 0 && pos.halfmove_clock() >= 100) return 0;
+
+    // Draw detection: repetition
+    if (ply > 0) {
+        uint64_t h = pos.hash();
+        // Check current search path (same side to move, every two plies)
+        for (int i = ply - 2; i >= 0; i -= 2) {
+            if (search_path[i] == h) return 0;
+        }
+        // Check pre-search game history. Only positions within the halfmove-clock
+        // window can possibly recur (an irreversible move resets the clock and
+        // eliminates any prior repetition possibility).
+        int hmclock = pos.halfmove_clock();
+        size_t gh_size = game_history.size();
+        size_t start = (gh_size > (size_t)hmclock) ? gh_size - hmclock : 0;
+        for (size_t i = start; i < gh_size; i++) {
+            if (game_history[i] == h) return 0;
+        }
+    }
+    search_path[ply] = pos.hash();
 
     bool tt_found = false;
     TTEntry* tte = tt.probe(pos.hash(), tt_found);
@@ -108,7 +138,7 @@ int Searcher::negamax(Position& pos, int depth, int alpha, int beta, int ply, bo
     }
 
     bool in_check = pos.in_check();
-    int static_eval = evaluate(pos);
+    int static_eval = do_evaluate(pos);
 
     // Null move pruning
     if (do_null && !in_check && !is_pv && depth >= 3 &&
@@ -227,7 +257,8 @@ SearchResult Searcher::go(const SearchLimits& limits) {
             int time_left = (stm == WHITE) ? limits.wtime_ms : limits.btime_ms;
             int inc = (stm == WHITE) ? limits.winc_ms : limits.binc_ms;
             if (time_left > 0) {
-                time_limit_ms = time_left / 25 + inc / 2;
+                int divisor = (limits.movestogo > 0) ? (limits.movestogo + 1) : DEFAULT_MOVES_TO_GO;
+                time_limit_ms = time_left / divisor + inc / 2;
                 if (time_limit_ms > time_left - 50)
                     time_limit_ms = std::max(time_left - 50, 10);
             }

@@ -9,6 +9,12 @@
 UCI::UCI() {
     pos.reset();
     nnue_evaluator = NNUE::create_evaluator();
+    game_history.push_back(pos.hash());
+    searcher.set_nnue(nnue_evaluator.get());
+}
+
+UCI::~UCI() {
+    stop_search();
 }
 
 std::string UCI::move_to_str(Move m) {
@@ -74,6 +80,8 @@ void UCI::cmd_isready() {
 
 void UCI::cmd_ucinewgame() {
     pos.reset();
+    game_history.clear();
+    game_history.push_back(pos.hash());
     searcher.new_game();
 }
 
@@ -83,8 +91,11 @@ void UCI::cmd_position(const std::string& line) {
     ss >> token; // "position"
     ss >> token;
 
+    game_history.clear();
+
     if (token == "startpos") {
         pos.reset();
+        game_history.push_back(pos.hash());
         if (!(ss >> token)) return; // possibly "moves"
     } else if (token == "fen") {
         std::string fen;
@@ -93,6 +104,7 @@ void UCI::cmd_position(const std::string& line) {
             fen += token;
         }
         pos.set(fen);
+        game_history.push_back(pos.hash());
     }
 
     if (token == "moves") {
@@ -101,12 +113,22 @@ void UCI::cmd_position(const std::string& line) {
             if (m != MOVE_NULL) {
                 StateInfo si;
                 pos.make_move(m, si);
+                game_history.push_back(pos.hash());
             }
         }
     }
 }
 
+void UCI::stop_search() {
+    if (search_thread.joinable()) {
+        searcher.stop();
+        search_thread.join();
+    }
+}
+
 void UCI::cmd_go(const std::string& line) {
+    stop_search(); // ensure no previous search is running
+
     SearchLimits limits;
     std::istringstream ss(line);
     std::string token;
@@ -119,12 +141,25 @@ void UCI::cmd_go(const std::string& line) {
         else if (token == "binc") ss >> limits.binc_ms;
         else if (token == "movetime") ss >> limits.movetime_ms;
         else if (token == "depth") ss >> limits.depth;
+        else if (token == "movestogo") ss >> limits.movestogo;
         else if (token == "infinite") limits.infinite = true;
     }
 
+    // Pass game history excluding the current root position (last element).
+    // Positions before an irreversible move cannot recur, but we pass all of them
+    // and let the search use the halfmove clock to limit comparisons.
+    std::vector<uint64_t> hist;
+    if (!game_history.empty())
+        hist.assign(game_history.begin(), game_history.end() - 1);
+
     searcher.set_position(pos);
-    SearchResult result = searcher.go(limits);
-    std::cout << "bestmove " << move_to_str(result.best_move) << std::endl;
+    searcher.set_history(hist);
+
+    search_thread = std::thread([this, limits]() {
+        SearchResult result = searcher.go(limits);
+        std::cout << "bestmove " << move_to_str(result.best_move) << "\n";
+        std::cout.flush();
+    });
 }
 
 void UCI::cmd_setoption(const std::string& line) {
@@ -160,10 +195,12 @@ void UCI::cmd_setoption(const std::string& line) {
 }
 
 void UCI::cmd_stop() {
-    searcher.stop();
+    stop_search();
 }
 
-void UCI::cmd_quit() {}
+void UCI::cmd_quit() {
+    stop_search();
+}
 
 void UCI::cmd_d() {
     std::cout << "\n +---+---+---+---+---+---+---+---+\n";
@@ -179,6 +216,43 @@ void UCI::cmd_d() {
     std::cout << "   a   b   c   d   e   f   g   h\n\n";
     std::cout << "Fen: " << pos.fen() << "\n";
     std::cout << "Key: " << std::hex << pos.hash() << std::dec << "\n";
+}
+
+static uint64_t perft_helper(Position& pos, int depth) {
+    if (depth == 0) return 1;
+    MoveList moves;
+    generate_legal_moves(pos, moves);
+    if (depth == 1) return moves.count;
+    uint64_t nodes = 0;
+    for (int i = 0; i < moves.count; i++) {
+        StateInfo si;
+        pos.make_move(moves.moves[i], si);
+        nodes += perft_helper(pos, depth - 1);
+        pos.unmake_move(moves.moves[i], si);
+    }
+    return nodes;
+}
+
+void UCI::cmd_perft(const std::string& line) {
+    std::istringstream ss(line);
+    std::string token;
+    ss >> token; // "perft"
+    int depth = 1;
+    ss >> depth;
+    if (depth < 1) depth = 1;
+
+    MoveList moves;
+    generate_legal_moves(pos, moves);
+    uint64_t total = 0;
+    for (int i = 0; i < moves.count; i++) {
+        StateInfo si;
+        pos.make_move(moves.moves[i], si);
+        uint64_t cnt = perft_helper(pos, depth - 1);
+        pos.unmake_move(moves.moves[i], si);
+        std::cout << move_to_str(moves.moves[i]) << ": " << cnt << "\n";
+        total += cnt;
+    }
+    std::cout << "\nNodes searched: " << total << "\n";
 }
 
 void UCI::loop() {
@@ -197,7 +271,8 @@ void UCI::loop() {
         else if (cmd == "setoption") cmd_setoption(line);
         else if (cmd == "stop") cmd_stop();
         else if (cmd == "d") cmd_d();
-        else if (cmd == "quit") break;
+        else if (cmd == "perft") cmd_perft(line);
+        else if (cmd == "quit") { cmd_quit(); break; }
         else std::cout << "info string Unknown command: " << cmd << std::endl;
 
         std::cout.flush();
