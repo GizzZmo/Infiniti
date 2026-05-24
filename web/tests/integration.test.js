@@ -3,7 +3,7 @@ const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
-const { authenticator } = require('otplib');
+const otplib = require('otplib');
 
 const testDbPath = path.join(__dirname, 'tmp-test.db');
 if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
@@ -46,7 +46,7 @@ test('end-to-end auth, transactions, 2fa, kyc and favorites flow', async () => {
     .post('/api/auth/2fa/setup')
     .set('Authorization', 'Token ' + token1)
     .expect(200);
-  const otp = authenticator.generate(setup2fa.body.secret);
+  const otp = await otplib.generate({ secret: setup2fa.body.secret });
 
   const enable2fa = await request(app)
     .post('/api/auth/2fa/enable')
@@ -61,7 +61,7 @@ test('end-to-end auth, transactions, 2fa, kyc and favorites flow', async () => {
     .expect(200);
   assert.equal(login2.body.requires2fa, true);
 
-  const otp2 = authenticator.generate(setup2fa.body.secret);
+  const otp2 = await otplib.generate({ secret: setup2fa.body.secret });
   const login2fa = await request(app)
     .post('/api/auth/login/2fa')
     .send({ challengeToken: login2.body.challengeToken, otp: otp2 })

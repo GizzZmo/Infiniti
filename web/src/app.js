@@ -129,7 +129,7 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-app.post('/api/auth/login/2fa', (req, res) => {
+app.post('/api/auth/login/2fa', async (req, res) => {
   const { challengeToken, otp, recoveryCode } = req.body;
   if (!challengeToken) return res.status(400).json({ error: 'Missing challenge token.' });
 
@@ -145,7 +145,7 @@ app.post('/api/auth/login/2fa', (req, res) => {
     return res.status(400).json({ error: '2FA is not enabled.' });
   }
 
-  const otpOk = otp ? verifyTotp(user.two_factor_secret, otp) : false;
+  const otpOk = otp ? await verifyTotp(user.two_factor_secret, otp) : false;
   const recoveryOk = !otpOk && recoveryCode ? consumeRecoveryCode(user.id, recoveryCode) : false;
 
   if (!otpOk && !recoveryOk) {
@@ -202,14 +202,14 @@ app.post('/api/auth/2fa/setup', requireAuth, async (req, res) => {
   return res.json(setup);
 });
 
-app.post('/api/auth/2fa/enable', requireAuth, (req, res) => {
+app.post('/api/auth/2fa/enable', requireAuth, async (req, res) => {
   const { otp } = req.body;
   const current = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!current.two_factor_secret_pending) {
     return res.status(400).json({ error: '2FA setup not initialized.' });
   }
 
-  if (!verifyTotp(current.two_factor_secret_pending, otp || '')) {
+  if (!(await verifyTotp(current.two_factor_secret_pending, otp || ''))) {
     return res.status(400).json({ error: 'Invalid OTP.' });
   }
 
@@ -222,11 +222,11 @@ app.post('/api/auth/2fa/enable', requireAuth, (req, res) => {
   return res.json({ success: true, recoveryCodes });
 });
 
-app.post('/api/auth/2fa/disable', requireAuth, (req, res) => {
+app.post('/api/auth/2fa/disable', requireAuth, async (req, res) => {
   const { otp } = req.body;
   const current = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!current.two_factor_enabled) return res.json({ success: true });
-  if (!verifyTotp(current.two_factor_secret, otp || '')) {
+  if (!(await verifyTotp(current.two_factor_secret, otp || ''))) {
     return res.status(400).json({ error: 'Invalid OTP.' });
   }
 

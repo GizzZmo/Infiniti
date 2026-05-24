@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { authenticator } = require('otplib');
+const otplib = require('otplib');
 const QRCode = require('qrcode');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const {
@@ -168,17 +168,21 @@ function consumeRecoveryCode(userId, code) {
 }
 
 async function createTotpSetup(user) {
-  const secret = authenticator.generateSecret();
-  const label = encodeURIComponent(`Infiniti:${user.email}`);
-  const issuer = encodeURIComponent('Infiniti Chess');
-  const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}`;
+  const secret = otplib.generateSecret();
+  const otpauth = otplib.generateURI({
+    secret,
+    label: `Infiniti:${user.email}`,
+    issuer: 'Infiniti Chess',
+  });
   const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
   db.prepare('UPDATE users SET two_factor_secret_pending = ? WHERE id = ?').run(secret, user.id);
   return { secret, otpauth, qrCodeDataUrl };
 }
 
-function verifyTotp(secret, otp) {
-  return authenticator.verify({ token: otp, secret });
+async function verifyTotp(secret, otp) {
+  const result = await otplib.verify({ token: otp, secret });
+  if (typeof result === 'boolean') return result;
+  return Boolean(result && result.valid);
 }
 
 async function uploadToObjectStorage(buffer, key, contentType) {
