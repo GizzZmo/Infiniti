@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8" /><title>Admin KYC Review</title></head>
+<body>
+  <h1>Admin KYC Review Panel</h1>
+  <p><a href="/index.html">Back</a></p>
+  <label>Auth token <input id="token" size="80" /></label>
+  <button id="loadBtn">Load Submissions</button>
+  <pre id="output"></pre>
+  <script>
+    const tokenInput = document.getElementById('token');
+    tokenInput.value = localStorage.getItem('authToken') || '';
+    const output = document.getElementById('output');
+
+    async function call(url, options = {}) {
+      const token = tokenInput.value.trim();
+      localStorage.setItem('authToken', token);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+          Authorization: token ? 'Token ' + token : '',
+        },
+      });
+      return response.json();
+    }
+
+    async function load() {
+      const data = await call('/api/admin/kyc');
+      output.textContent = JSON.stringify(data, null, 2);
+      if (!data.submissions) return;
+
+      const actions = data.submissions.slice(0, 5).map((s) => `Submission ${s.id}: ${s.status}`).join('\n');
+      output.textContent += '\n\nUse console to run reviewSubmission(id, "approved"|"rejected", "comment")\n' + actions;
+      window.reviewSubmission = async (id, status, comment) => {
+        const review = await call('/api/admin/kyc/' + id + '/review', {
+          method: 'POST',
+          body: JSON.stringify({ status, comment }),
+        });
+        output.textContent = JSON.stringify(review, null, 2);
+      };
+    }
+
+    document.getElementById('loadBtn').onclick = load;
+  </script>
+</body>
+</html>

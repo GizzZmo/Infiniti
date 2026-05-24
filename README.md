@@ -155,6 +155,28 @@ A single `all-checks` job aggregates all results into one branch-protection gate
 
 ---
 
+## Web Platform (Auth + KYC + Transactions + Favorites)
+
+This repository now also includes a Node.js web platform in `/web` implementing:
+
+- Email verification and password reset flows
+- TOTP two-factor authentication with recovery codes
+- KYC document upload and admin review endpoints
+- Transaction filtering/search and CSV export
+- Favorite games management UI and APIs
+
+Quick start:
+
+```bash
+cd web
+npm install
+npm run start
+```
+
+Then open `http://localhost:3000`.
+
+---
+
 ## License
 
 [MIT](LICENSE) © 2026 Jon Arve Ovesen

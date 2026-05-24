@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Infiniti Web Platform</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; }
+    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+    input, button, select { margin: 0.2rem; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <h1>Infiniti Account Portal</h1>
+  <p><a href="/kyc.html">KYC Upload</a> · <a href="/transactions.html">Transactions</a> · <a href="/favorites.html">Favorite Games</a> · <a href="/admin-kyc.html">Admin KYC Panel</a></p>
+
+  <section>
+    <h2>Register</h2>
+    <div class="row">
+      <input id="regEmail" placeholder="Email" />
+      <input id="regPassword" type="password" placeholder="Password" />
+      <button id="registerBtn">Register</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Login</h2>
+    <div class="row">
+      <input id="loginEmail" placeholder="Email" />
+      <input id="loginPassword" type="password" placeholder="Password" />
+      <button id="loginBtn">Login</button>
+    </div>
+    <div class="row">
+      <input id="loginOtp" placeholder="OTP (if required)" />
+      <input id="loginRecovery" placeholder="Recovery Code (optional)" />
+      <button id="submit2faBtn">Submit 2FA</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Email Verification & Password Reset</h2>
+    <button id="resendVerifyBtn">Resend verification email</button>
+    <div class="row">
+      <input id="forgotEmail" placeholder="Email for reset" />
+      <button id="forgotBtn">Send reset email</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>2FA Management</h2>
+    <button id="setup2faBtn">Start 2FA setup</button>
+    <div id="qrWrap"></div>
+    <div class="row">
+      <input id="enableOtp" placeholder="OTP to enable" />
+      <button id="enable2faBtn">Enable 2FA</button>
+    </div>
+    <div class="row">
+      <input id="disableOtp" placeholder="OTP to disable" />
+      <button id="disable2faBtn">Disable 2FA</button>
+    </div>
+  </section>
+
+  <pre id="output"></pre>
+
+  <script src="/main.js"></script>
+</body>
+</html>
