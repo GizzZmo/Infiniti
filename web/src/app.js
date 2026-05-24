@@ -29,12 +29,14 @@ const {
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 6 * 1024 * 1024 } });
 
+const apiLimiter = rateLimit({ windowMs: 60_000, max: 120 });
 const authLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 const loginLimiter = rateLimit({ windowMs: 60_000, max: 8 });
 const resetLimiter = rateLimit({ windowMs: 60_000, max: 5 });
 const otpLimiter = rateLimit({ windowMs: 60_000, max: 8 });
 
 app.use(express.json());
+app.use('/api', apiLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/forgot-password', resetLimiter);
