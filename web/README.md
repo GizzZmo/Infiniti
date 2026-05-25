@@ -32,10 +32,15 @@ Open http://localhost:3000.
 ## Scripts
 
 - `npm run lint`
-- `npm run build`
+- `npm run build` (generates `web/dist/assets` plus `web/dist/asset-manifest.json`)
+- `npm run screenshots` (captures UI screenshots into `web/dist/screenshots`)
 - `npm test`
 
 ## Notes
 
 - The first registered user is auto-promoted to admin for KYC review access.
 - In non-production mode, sent emails are exposed at `GET /api/dev/sent-emails` for local testing.
+
+## CI artifacts
+
+- GitHub Actions workflow `.github/workflows/web-packaging.yml` installs dependencies, validates the app, builds static assets, captures screenshots, and uploads them together as a packaging artifact.

@@ -5,9 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "build": "node -e \"console.log('No build step required for this Node app')\"",
+    "build": "node scripts/generate-assets.js",
     "lint": "node --check src/*.js && node --check public/main.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "screenshots": "node scripts/capture-screenshots.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
+    "playwright": "^1.60.0",
     "supertest": "^7.2.2"
   }
 }

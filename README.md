@@ -170,12 +170,15 @@ This repository includes a **multi-language GitHub Actions pipeline** that detec
 
 ```
 ci.yml  (Orchestrator)
-├── cpp-ci.yml          — CMake · clang-tidy · CTest (GCC, Clang, MSVC, AppleClang)
-├── codeql-analysis.yml — Security scanning (C/C++, and others if added)
-└── dependency-review.yml — CVE & licence scanning on pull requests
+├── cpp-ci.yml                — CMake · clang-tidy · CTest (GCC, Clang, MSVC, AppleClang)
+├── codeql-analysis.yml       — Security scanning (C/C++, and others if added)
+├── dependency-review.yml     — CVE & licence scanning on pull requests
+└── web-packaging.yml          — Web asset packaging + screenshot artifacts
 ```
 
 A single `all-checks` job aggregates all results into one branch-protection gate.
+
+The web workflow also validates the Node.js app, packages the `web/public` assets into `web/dist/assets`, captures screenshots of the UI pages, and uploads both artifact sets for inspection.
 
 ---
 
