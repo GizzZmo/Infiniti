@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8" /><title>KYC Upload</title></head>
+<body>
+  <h1>KYC Document Upload</h1>
+  <p><a href="/index.html">Back</a></p>
+  <label>Auth token <input id="token" /></label>
+  <select id="documentType">
+    <option value="government_id">Government ID</option>
+    <option value="proof_of_address">Proof of Address</option>
+  </select>
+  <input type="file" id="file" />
+  <button id="uploadBtn">Upload</button>
+  <button id="refreshBtn">Refresh My Submissions</button>
+  <pre id="output"></pre>
+  <script>
+    const output = document.getElementById('output');
+    const tokenInput = document.getElementById('token');
+    tokenInput.value = localStorage.getItem('authToken') || '';
+
+    async function call(url, options) {
+      const token = tokenInput.value.trim();
+      localStorage.setItem('authToken', token);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...(options?.headers || {}),
+          Authorization: token ? 'Token ' + token : '',
+        },
+      });
+      const text = await response.text();
+      output.textContent = text;
+    }
+
+    document.getElementById('uploadBtn').onclick = async () => {
+      const formData = new FormData();
+      formData.append('documentType', document.getElementById('documentType').value);
+      formData.append('document', document.getElementById('file').files[0]);
+      await call('/api/kyc/upload', { method: 'POST', body: formData });
+    };
+
+    document.getElementById('refreshBtn').onclick = async () => {
+      await call('/api/kyc/me', { method: 'GET' });
+    };
+  </script>
+</body>
+</html>

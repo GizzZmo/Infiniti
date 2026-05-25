@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8" /><title>Transactions</title></head>
+<body>
+  <h1>Transaction Filtering & Search</h1>
+  <p><a href="/index.html">Back</a></p>
+  <label>Auth token <input id="token" size="80" /></label>
+  <div>
+    <input id="type" placeholder="type" />
+    <input id="status" placeholder="status" />
+    <input id="minAmount" type="number" step="0.01" placeholder="min" />
+    <input id="maxAmount" type="number" step="0.01" placeholder="max" />
+    <input id="startDate" placeholder="start date (YYYY-MM-DD)" />
+    <input id="endDate" placeholder="end date (YYYY-MM-DD)" />
+    <button id="searchBtn">Search</button>
+    <button id="exportBtn">Export CSV</button>
+  </div>
+  <pre id="output"></pre>
+  <script>
+    const tokenInput = document.getElementById('token');
+    tokenInput.value = localStorage.getItem('authToken') || '';
+    const output = document.getElementById('output');
+
+    function queryString() {
+      const params = new URLSearchParams();
+      ['type', 'status', 'minAmount', 'maxAmount', 'startDate', 'endDate'].forEach((id) => {
+        const v = document.getElementById(id).value.trim();
+        if (v) params.set(id, v);
+      });
+      return params.toString();
+    }
+
+    async function search() {
+      const token = tokenInput.value.trim();
+      localStorage.setItem('authToken', token);
+      const response = await fetch('/api/transactions?' + queryString(), {
+        headers: { Authorization: token ? 'Token ' + token : '' },
+      });
+      const text = await response.text();
+      output.textContent = text;
+    }
+
+    document.getElementById('searchBtn').onclick = search;
+    document.getElementById('exportBtn').onclick = async () => {
+      const token = tokenInput.value.trim();
+      localStorage.setItem('authToken', token);
+      const response = await fetch('/api/transactions/export.csv?' + queryString(), {
+        headers: { Authorization: token ? 'Token ' + token : '' },
+      });
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8" /><title>Favorite Games</title></head>
+<body>
+  <h1>Favorite Games</h1>
+  <p><a href="/index.html">Back</a></p>
+  <label>Auth token <input id="token" size="80" /></label>
+  <button id="loadBtn">Load Games & Favorites</button>
+  <div>
+    <h2>Games</h2>
+    <ul id="games"></ul>
+  </div>
+  <div>
+    <h2>Favorites</h2>
+    <pre id="favorites"></pre>
+  </div>
+  <script>
+    const tokenInput = document.getElementById('token');
+    tokenInput.value = localStorage.getItem('authToken') || '';
+
+    async function api(url, options = {}) {
+      const token = tokenInput.value.trim();
+      localStorage.setItem('authToken', token);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+          Authorization: token ? 'Token ' + token : '',
+        },
+      });
+      return response.json();
+    }
+
+    async function load() {
+      const gamesData = await api('/api/games');
+      const list = document.getElementById('games');
+      list.innerHTML = '';
+      gamesData.games.forEach((game) => {
+        const li = document.createElement('li');
+        li.innerHTML = `${game.name} <button data-id="${game.id}">Favorite</button> <button data-rm="${game.id}">Remove</button>`;
+        list.appendChild(li);
+      });
+
+      document.querySelectorAll('[data-id]').forEach((btn) => {
+        btn.onclick = async () => {
+          await api('/api/games/' + btn.dataset.id + '/favorite', {
+            method: 'POST',
+            body: JSON.stringify({ tags: 'opening', notes: 'Interesting line' }),
+          });
+          await refreshFavorites();
+        };
+      });
+
+      document.querySelectorAll('[data-rm]').forEach((btn) => {
+        btn.onclick = async () => {
+          await api('/api/games/' + btn.dataset.rm + '/favorite', { method: 'DELETE' });
+          await refreshFavorites();
+        };
+      });
+
+      await refreshFavorites();
+    }
+
+    async function refreshFavorites() {
+      const favorites = await api('/api/users/me/favorites');
+      document.getElementById('favorites').textContent = JSON.stringify(favorites, null, 2);
+    }
+
+    document.getElementById('loadBtn').onclick = load;
+  </script>
+</body>
+</html>
