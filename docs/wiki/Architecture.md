@@ -141,9 +141,9 @@ The HalfKP architecture encodes the position as (king square, piece type, piece 
 
 `uci.cpp` implements a simple loop: read a line, tokenise, dispatch to a handler function. It owns the `Position` and `Searcher` objects and passes them by reference into sub-handlers.
 
-Supported commands: `uci`, `isready`, `ucinewgame`, `position`, `go`, `stop`, `setoption`, `d`, `quit`.
+Supported commands: `uci`, `isready`, `ucinewgame`, `position`, `go`, `stop`, `setoption`, `ponderhit`, `debug`, `register`, `d`, `perft`, `quit`.
 
-The `go` command launches the search synchronously and prints `bestmove` when done. (A future improvement would run the search on a dedicated thread to allow `stop` to interrupt it mid-search via an atomic flag.)
+The `go` command runs the search on a dedicated thread and prints `bestmove` when done. `stop` is implemented via an atomic stop flag checked throughout search.
 
 ---
 
