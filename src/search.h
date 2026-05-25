@@ -13,6 +13,7 @@ constexpr int MAX_PLY = 128;
 
 struct SearchLimits {
     int depth = 0;
+    int nodes = 0;
     int movetime_ms = 0;
     int wtime_ms = 0, btime_ms = 0;
     int winc_ms = 0, binc_ms = 0;
@@ -45,6 +46,7 @@ private:
     int64_t node_count = 0;
     int seldepth = 0;
     int time_limit_ms = 0;
+    SearchLimits limits;
     NNUE::Evaluator* nnue_eval = nullptr;
 
     Move killers[MAX_PLY][2];

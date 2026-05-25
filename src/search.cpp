@@ -38,6 +38,7 @@ int Searcher::do_evaluate(const Position& pos) const {
 
 bool Searcher::time_up() const {
     if (stop_flag) return true;
+    if (limits.nodes > 0 && node_count >= limits.nodes) return true;
     if (time_limit_ms <= 0) return false;
     auto now = std::chrono::steady_clock::now();
     int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - search_start).count();
@@ -242,6 +243,7 @@ void Searcher::print_info(int depth, int score, const std::vector<Move>& pv) con
 }
 
 SearchResult Searcher::go(const SearchLimits& limits) {
+    this->limits = limits;
     stop_flag = false;
     node_count = 0;
     seldepth = 0;
