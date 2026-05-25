@@ -79,8 +79,6 @@ jobs:
             build_type: Release
           - name: "Windows MSVC"
             os: windows-latest
-            cc: cl
-            cxx: cl
             build_type: Release
           - name: "macOS AppleClang"
             os: macos-latest
@@ -99,7 +97,16 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
-      - name: Configure CMake
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
+          -G "Visual Studio 17 2022"
+          -A x64
+
+      - name: Configure CMake (Non-Windows)
+        if: runner.os != 'Windows'
         env:
           CC: ${{ matrix.config.cc }}
           CXX: ${{ matrix.config.cxx }}
@@ -109,16 +116,6 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.config.cc }}
           -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
           -G "Ninja"
-        continue-on-error: true  # Ninja may not be on Windows PATH
-
-      - name: Configure CMake (fallback without Ninja)
-        if: failure()
-        env:
-          CC: ${{ matrix.config.cc }}
-          CXX: ${{ matrix.config.cxx }}
-        run: >
-          cmake -B build
-          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }}
 
       - name: Build
         run: cmake --build build --config ${{ matrix.config.build_type }}
