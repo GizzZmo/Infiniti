@@ -182,6 +182,20 @@ The web workflow also validates the Node.js app, packages the `web/public` asset
 
 ---
 
+## Screenshots
+
+| Page | Preview |
+|------|---------|
+| Registration / Login | ![Registration](docs/screenshots/index.png) |
+| KYC Upload | ![KYC Upload](docs/screenshots/kyc.png) |
+| Transactions | ![Transactions](docs/screenshots/transactions.png) |
+| Favorites | ![Favorites](docs/screenshots/favorites.png) |
+| Admin KYC Review | ![Admin KYC](docs/screenshots/admin-kyc.png) |
+| Email Verification | ![Email Verification](docs/screenshots/verify-email.png) |
+| Password Reset | ![Password Reset](docs/screenshots/reset-password.png) |
+
+---
+
 ## Web Platform (Auth + KYC + Transactions + Favorites)
 
 This repository now also includes a Node.js web platform in `/web` implementing:
