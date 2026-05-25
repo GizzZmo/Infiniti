@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-05-25T02:10:20.238Z",
+  "screenshots": [
+    {
+      "file": "index.png",
+      "url": "http://127.0.0.1:3000/index.html"
+    },
+    {
+      "file": "kyc.png",
+      "url": "http://127.0.0.1:3000/kyc.html"
+    },
+    {
+      "file": "transactions.png",
+      "url": "http://127.0.0.1:3000/transactions.html"
+    },
+    {
+      "file": "favorites.png",
+      "url": "http://127.0.0.1:3000/favorites.html"
+    },
+    {
+      "file": "admin-kyc.png",
+      "url": "http://127.0.0.1:3000/admin-kyc.html"
+    },
+    {
+      "file": "verify-email.png",
+      "url": "http://127.0.0.1:3000/verify-email.html?token=demo-token"
+    },
+    {
+      "file": "reset-password.png",
+      "url": "http://127.0.0.1:3000/reset-password.html?token=demo-token"
+    }
+  ]
+}
