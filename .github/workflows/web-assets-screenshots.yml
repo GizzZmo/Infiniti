@@ -1,0 +1,120 @@
+name: Web Assets & Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-assets-screenshots.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-assets-screenshots.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generate-assets-and-screenshots:
+    name: Generate Assets & Screenshots
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      PORT: 3000
+      APP_BASE_URL: http://127.0.0.1:3000
+      JWT_SECRET: ci-jwt-secret
+      LOGIN_CHALLENGE_SECRET: ci-login-challenge-secret
+      EMAIL_VERIFY_TTL_MINUTES: 30
+      PASSWORD_RESET_TTL_MINUTES: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Start web server
+        run: |
+          node src/server.js > "$RUNNER_TEMP/web-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/web-server.pid"
+
+      - name: Wait for web server
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent "$APP_BASE_URL/index.html" >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/web-server.log"
+          exit 1
+
+      - name: Capture screenshots
+        env:
+          SCREENSHOT_BASE_URL: http://127.0.0.1:3000
+        run: npm run screenshots
+
+      - name: Stop web server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/web-server.pid" ]; then
+            python - <<'INNERPY'
+from pathlib import Path
+import os
+pid_file = Path(os.environ['RUNNER_TEMP']) / 'web-server.pid'
+if pid_file.exists():
+    pid = pid_file.read_text().strip()
+    if pid:
+        try:
+            os.kill(int(pid), 15)
+        except ProcessLookupError:
+            pass
+INNERPY
+          fi
+
+      - name: Upload generated assets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-assets
+          path: |
+            web/dist/assets
+            web/dist/asset-manifest.json
+          if-no-files-found: error
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-screenshots
+          path: |
+            web/dist/screenshots
+          if-no-files-found: error
+
+      - name: Upload server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-server-log
+          path: ${{ runner.temp }}/web-server.log
+          if-no-files-found: ignore
