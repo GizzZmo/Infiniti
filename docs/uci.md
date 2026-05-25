@@ -66,6 +66,10 @@ Starts the search. Options can be combined freely.
 | `binc <ms>` | integer | Black's increment per move in milliseconds |
 | `movetime <ms>` | integer | Search exactly this many milliseconds |
 | `depth <n>` | integer | Search to exactly this depth |
+| `nodes <n>` | integer | Stop after searching approximately this many nodes |
+| `mate <n>` | integer | Search for mate in *n* moves (mapped to fixed depth) |
+| `ponder` | flag | Accepted for GUI compatibility (handled as normal search) |
+| `searchmoves <move1> …` | list | Accepted for GUI compatibility |
 | `infinite` | flag | Search until `stop` is received |
 
 **Response (one line per completed depth):**
@@ -83,6 +87,12 @@ bestmove <move>
 ### `stop`
 
 Stops the current search immediately. The engine outputs `bestmove` with the best move found so far.
+
+---
+
+### `ponderhit`
+
+Accepted for GUI compatibility. Infiniti continues the current search as normal.
 
 ---
 
@@ -123,6 +133,23 @@ Sets an engine option. See [Options](#options) below.
 
 ---
 
+### `debug (on|off)`
+
+Accepted for GUI compatibility.
+
+---
+
+### `register [later | name <x> code <y>]`
+
+Accepted for GUI compatibility.
+
+Response:
+```
+registration ok
+```
+
+---
+
 ### `quit`
 
 Exits the engine process.
@@ -142,6 +169,40 @@ Exits the engine process.
 Size of the transposition table in megabytes. Larger values reduce TT collisions at the cost of more memory usage. Typical values: 64–512 MB for analysis, 16–128 MB for engine-vs-engine play.
 
 > **Note:** Hash resizing takes effect immediately when the option is set.
+
+---
+
+### `Threads`
+
+| Field | Value |
+|-------|-------|
+| Type | spin |
+| Default | 1 |
+| Range | 1 – 1 |
+
+Infiniti currently searches on a single thread.
+
+---
+
+### `Ponder`
+
+| Field | Value |
+|-------|-------|
+| Type | check |
+| Default | false |
+
+Accepted for GUI compatibility.
+
+---
+
+### `UCI_Chess960`
+
+| Field | Value |
+|-------|-------|
+| Type | check |
+| Default | false |
+
+Accepted for GUI compatibility.
 
 ---
 

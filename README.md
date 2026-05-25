@@ -70,6 +70,9 @@ uci
 id name Infiniti
 id author Infiniti Team
 option name Hash type spin default 16 min 1 max 2048
+option name Threads type spin default 1 min 1 max 1
+option name Ponder type check default false
+option name UCI_Chess960 type check default false
 option name UseNNUE type check default true
 option name EvalFile type string default
 uciok
@@ -90,6 +93,9 @@ quit
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `Hash` | spin | 16 | Transposition table size in megabytes (1 – 2048) |
+| `Threads` | spin | 1 | Search threads (currently fixed to 1) |
+| `Ponder` | check | false | Accepted for GUI compatibility |
+| `UCI_Chess960` | check | false | Accepted for GUI compatibility |
 | `UseNNUE` | check | true | Enable the NNUE neural network evaluator |
 | `EvalFile` | string | *(empty)* | Path to an NNUE network file (`.nnue`) |
 

@@ -69,6 +69,9 @@ void UCI::cmd_uci() {
     std::cout << "id name Infiniti" << std::endl;
     std::cout << "id author Infiniti Team" << std::endl;
     std::cout << "option name Hash type spin default 16 min 1 max 2048" << std::endl;
+    std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
+    std::cout << "option name Ponder type check default false" << std::endl;
+    std::cout << "option name UCI_Chess960 type check default false" << std::endl;
     std::cout << "option name UseNNUE type check default true" << std::endl;
     std::cout << "option name EvalFile type string default" << std::endl;
     std::cout << "uciok" << std::endl;
@@ -141,8 +144,23 @@ void UCI::cmd_go(const std::string& line) {
         else if (token == "binc") ss >> limits.binc_ms;
         else if (token == "movetime") ss >> limits.movetime_ms;
         else if (token == "depth") ss >> limits.depth;
+        else if (token == "nodes") ss >> limits.nodes;
+        else if (token == "mate") {
+            int mate_moves = 0;
+            ss >> mate_moves;
+            if (mate_moves > 0) limits.depth = std::max(limits.depth, mate_moves * 2);
+        }
         else if (token == "movestogo") ss >> limits.movestogo;
         else if (token == "infinite") limits.infinite = true;
+        else if (token == "ponder") {
+            // Ponder mode is treated like regular search for now.
+        } else if (token == "searchmoves") {
+            // Parse and ignore move list for compatibility with UCI GUIs.
+            while (ss >> token) {
+                Move m = str_to_move(pos, token);
+                if (m == MOVE_NULL) break;
+            }
+        }
     }
 
     // Pass game history excluding the current root position (last element).
@@ -177,6 +195,12 @@ void UCI::cmd_setoption(const std::string& line) {
             if (mb > 2048) mb = 2048;
             searcher.resize_tt(mb);
         } catch (...) {}
+    } else if (name == "Threads") {
+        // Infiniti currently supports a single search thread.
+    } else if (name == "Ponder") {
+        ponder = (value == "true");
+    } else if (name == "UCI_Chess960") {
+        chess960 = (value == "true");
     } else if (name == "UseNNUE") {
         use_nnue = (value == "true");
     } else if (name == "EvalFile") {
@@ -200,6 +224,19 @@ void UCI::cmd_stop() {
 
 void UCI::cmd_quit() {
     stop_search();
+}
+
+void UCI::cmd_debug(const std::string& line) {
+    (void)line;
+}
+
+void UCI::cmd_register(const std::string& line) {
+    (void)line;
+    std::cout << "registration ok" << std::endl;
+}
+
+void UCI::cmd_ponderhit() {
+    // Pondering is not currently implemented; keep searching as normal.
 }
 
 void UCI::cmd_d() {
@@ -270,6 +307,9 @@ void UCI::loop() {
         else if (cmd == "go") cmd_go(line);
         else if (cmd == "setoption") cmd_setoption(line);
         else if (cmd == "stop") cmd_stop();
+        else if (cmd == "ponderhit") cmd_ponderhit();
+        else if (cmd == "debug") cmd_debug(line);
+        else if (cmd == "register") cmd_register(line);
         else if (cmd == "d") cmd_d();
         else if (cmd == "perft") cmd_perft(line);
         else if (cmd == "quit") { cmd_quit(); break; }

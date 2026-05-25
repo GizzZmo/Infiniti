@@ -19,6 +19,8 @@ private:
     Searcher searcher;
     std::unique_ptr<NNUE::Evaluator> nnue_evaluator;
     bool use_nnue = true;
+    bool ponder = false;
+    bool chess960 = false;
     std::string eval_file;
     bool nnue_loaded = false;
 
@@ -34,6 +36,9 @@ private:
     void cmd_stop();
     void cmd_quit();
     void cmd_d();
+    void cmd_debug(const std::string& line);
+    void cmd_register(const std::string& line);
+    void cmd_ponderhit();
     void cmd_perft(const std::string& line);
 
     void stop_search();
