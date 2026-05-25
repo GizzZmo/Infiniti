@@ -102,3 +102,12 @@ time_limit = time_left / 25 + increment / 2
 This allocation is capped so that the engine never uses more than `time_left - 50 ms` on a single move.
 
 You can override time management by using `go movetime <ms>` (fixed milliseconds) or `go depth <n>` (fixed depth) or `go infinite` (search until `stop`).
+
+---
+
+## See Also
+
+- [Building](building.md) — compile Infiniti from source
+- [UCI Reference](uci.md) — full list of UCI commands and options
+- [FAQ](faq.md) — frequently asked questions
+- [Wiki: Getting Started](wiki/Getting-Started.md) — step-by-step first-run guide
