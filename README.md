@@ -1,6 +1,12 @@
 # Infiniti
 
+[![Build Status](https://github.com/GizzZmo/Infiniti/actions/workflows/ci.yml/badge.svg)](https://github.com/GizzZmo/Infiniti/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
+
 A UCI chess engine written in C++20, featuring bitboard-based move generation, a tapered hand-crafted evaluator with NNUE support, and an alpha-beta search with modern pruning techniques.
+
+> **Quick links:** [Building](docs/building.md) · [Usage](docs/usage.md) · [UCI Reference](docs/uci.md) · [FAQ](docs/faq.md) · [Wiki](docs/wiki/Home.md) · [Contributing](docs/contributing.md)
 
 ---
 
@@ -119,7 +125,13 @@ Infiniti/
     ├── search.md
     ├── evaluation.md
     ├── nnue.md
-    └── contributing.md
+    ├── faq.md
+    ├── contributing.md
+    └── wiki/
+        ├── Home.md
+        ├── Getting-Started.md
+        ├── Architecture.md
+        └── Roadmap.md
 ```
 
 ---
@@ -136,7 +148,19 @@ Full documentation lives in the [`docs/`](docs/) directory:
 | [Search](docs/search.md) | Search algorithm internals |
 | [Evaluation](docs/evaluation.md) | Hand-crafted evaluator internals |
 | [NNUE](docs/nnue.md) | NNUE architecture and usage |
+| [FAQ](docs/faq.md) | Frequently asked questions |
 | [Contributing](docs/contributing.md) | How to contribute |
+
+### Wiki
+
+In-depth guides and background articles are available in [`docs/wiki/`](docs/wiki/):
+
+| Wiki Page | Contents |
+|-----------|----------|
+| [Home](docs/wiki/Home.md) | Wiki overview and navigation |
+| [Getting Started](docs/wiki/Getting-Started.md) | Step-by-step first-run guide |
+| [Architecture](docs/wiki/Architecture.md) | Deep-dive into the engine internals |
+| [Roadmap](docs/wiki/Roadmap.md) | Planned features and future direction |
 
 ---
 

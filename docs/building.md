@@ -106,3 +106,18 @@ cmake --build build-san -j$(nproc)
 **`Threads::Threads not found`** — install `libpthread`. On Ubuntu/Debian: `sudo apt install build-essential`.
 
 **Link errors on Windows with MinGW** — make sure you are using a 64-bit toolchain (`x86_64-w64-mingw32`).
+
+**`CMake version too old`** — install CMake 3.16 or later from [cmake.org/download](https://cmake.org/download/) or via your package manager:
+```bash
+# Ubuntu / Debian
+sudo apt install cmake
+
+# macOS (Homebrew)
+brew install cmake
+```
+
+**`ninja: command not found`** — either install Ninja (`sudo apt install ninja-build` / `brew install ninja`) or omit the `-G Ninja` flag to use the default generator.
+
+**NNUE file not loading** — ensure the path passed to `EvalFile` is absolute or relative to the working directory from which the engine is launched. The engine prints an error to `info string` if the file cannot be opened.
+
+**Binary produces wrong moves / crashes immediately** — most likely a Release build was tested with a Debug NNUE file or vice versa. Start fresh with `cmake -B build -DCMAKE_BUILD_TYPE=Release` and a clean build directory.
