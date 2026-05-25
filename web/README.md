@@ -43,4 +43,4 @@ Open http://localhost:3000.
 
 ## CI artifacts
 
-- GitHub Actions workflow `.github/workflows/web-assets-screenshots.yml` installs dependencies, validates the app, builds static assets, captures screenshots, and uploads both as workflow artifacts.
+- GitHub Actions workflow `.github/workflows/web-packaging.yml` installs dependencies, validates the app, builds static assets, captures screenshots, and uploads them together as a packaging artifact.

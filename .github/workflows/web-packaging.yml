@@ -1,22 +1,22 @@
-name: Web Assets & Screenshots
+name: Web Packaging
 
 on:
   workflow_dispatch:
   push:
     paths:
       - 'web/**'
-      - '.github/workflows/web-assets-screenshots.yml'
+      - '.github/workflows/web-packaging.yml'
   pull_request:
     paths:
       - 'web/**'
-      - '.github/workflows/web-assets-screenshots.yml'
+      - '.github/workflows/web-packaging.yml'
 
 permissions:
   contents: read
 
 jobs:
-  generate-assets-and-screenshots:
-    name: Generate Assets & Screenshots
+  package-web-artifacts:
+    name: Package Web Artifacts
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -81,22 +81,14 @@ jobs:
             python -c "from pathlib import Path; import os; pid_file = Path(os.environ['RUNNER_TEMP']) / 'web-server.pid'; pid = pid_file.read_text().strip() if pid_file.exists() else ''; os.kill(int(pid), 15) if pid else None" || true
           fi
 
-      - name: Upload generated assets
+      - name: Upload package artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web-assets
+          name: web-package
           path: |
             web/dist/assets
             web/dist/asset-manifest.json
-          if-no-files-found: error
-
-      - name: Upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-screenshots
-          path: |
             web/dist/screenshots
           if-no-files-found: error
 

@@ -173,7 +173,7 @@ ci.yml  (Orchestrator)
 ├── cpp-ci.yml                — CMake · clang-tidy · CTest (GCC, Clang, MSVC, AppleClang)
 ├── codeql-analysis.yml       — Security scanning (C/C++, and others if added)
 ├── dependency-review.yml     — CVE & licence scanning on pull requests
-└── web-assets-screenshots.yml — Web asset packaging + screenshot artifacts
+└── web-packaging.yml          — Web asset packaging + screenshot artifacts
 ```
 
 A single `all-checks` job aggregates all results into one branch-protection gate.
