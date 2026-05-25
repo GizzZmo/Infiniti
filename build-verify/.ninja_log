@@ -1,0 +1,14 @@
+# ninja log v7
+1	496	1779676138991407454	CMakeFiles/infiniti.dir/src/movegen.cpp.o	51181697940e0dea
+3	626	1779676138992360571	CMakeFiles/infiniti.dir/src/eval.cpp.o	ebaa0271b761c36b
+1	828	1779676138990360616	CMakeFiles/infiniti.dir/src/bitboard.cpp.o	eb7f9e8a6bf69b8
+828	1706	1779676139817342124	CMakeFiles/infiniti.dir/nnue/nnue_file.cpp.o	388477cccfd8dcf6
+626	1731	1779676139615346641	CMakeFiles/infiniti.dir/nnue/nnue.cpp.o	918a717a92907622
+1706	1755	1779676140695322493	CMakeFiles/infiniti.dir/nnue/features_halfkp.cpp.o	23f67a5d71408a70
+1	1802	1779676138991026805	CMakeFiles/infiniti.dir/src/position.cpp.o	56b7fa76bc1406fe
+1731	1906	1779676140720321934	CMakeFiles/infiniti.dir/nnue/accumulator.cpp.o	97d817cc3b08a595
+0	2077	1779676138989360638	CMakeFiles/infiniti.dir/src/main.cpp.o	445eb3591368b941
+1755	2096	1779676140744321397	CMakeFiles/infiniti.dir/nnue/network.cpp.o	514079af7f1983cc
+3	2416	1779676138992953521	CMakeFiles/infiniti.dir/src/search.cpp.o	bc3a29a98de3a408
+496	2873	1779676139486090604	CMakeFiles/infiniti.dir/src/uci.cpp.o	36d467a952e60f93
+2873	2919	1779676141862296400	infiniti	5d7ae8acfce63fe1
