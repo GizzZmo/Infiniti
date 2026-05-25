@@ -8,7 +8,6 @@ This page tracks planned features, known limitations, and the long-term directio
 
 ## In Progress
 
-- **Thread-safe `stop` support** — move the search to a background thread and interrupt it via an atomic flag so that the `stop` UCI command works correctly mid-search.
 - **Improved time management** — replace the simple `time / 25 + increment / 2` formula with an adaptive scheme that accounts for position complexity and move history.
 
 ---
@@ -76,7 +75,6 @@ This page tracks planned features, known limitations, and the long-term directio
 - **No tablebase support** — endgame positions with few pieces are not played perfectly.
 - **No opening book** — all moves come from the engine's own search, even in well-known opening theory.
 - **NNUE requires a compatible file** — no network is bundled; without one the engine falls back to HCE.
-- **`stop` handling** — the `stop` command is only honoured between moves, not mid-search (tracked in "In Progress").
 
 ---
 
@@ -89,6 +87,7 @@ This page tracks planned features, known limitations, and the long-term directio
 - ✅ Tapered HCE (PeSTO PSTs, bishop pair, passed pawns)
 - ✅ NNUE (HalfKP, L1=256) evaluator with incremental accumulator
 - ✅ Full UCI protocol support
+- ✅ Thread-safe `stop` handling with background search and atomic interruption
 - ✅ Multi-compiler CI (GCC, Clang, MSVC, AppleClang)
 - ✅ CodeQL security scanning and dependency review
 - ✅ Node.js web platform (auth, KYC, transactions, favourites)
