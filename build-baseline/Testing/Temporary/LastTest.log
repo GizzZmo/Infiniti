@@ -1,0 +1,19 @@
+Start testing: May 25 02:28 UTC
+----------------------------------------------------------
+1/1 Testing: uci_sanity
+1/1 Test: uci_sanity
+Command: "/usr/local/bin/cmake" "-E" "echo" "Running UCI sanity..."
+Directory: /tmp/workspace/GizzZmo/Infiniti/build-baseline
+"uci_sanity" start time: May 25 02:28 UTC
+Output:
+----------------------------------------------------------
+Running UCI sanity...
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"uci_sanity" end time: May 25 02:28 UTC
+"uci_sanity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 25 02:28 UTC
