@@ -1,6 +1,6 @@
 # Infiniti
 
-[![Build Status](https://github.com/GizzZmo/Infiniti/actions/workflows/ci.yml/badge.svg)](https://github.com/GizzZmo/Infiniti/actions)
+[![C/C++ CI](https://github.com/GizzZmo/Infiniti/actions/workflows/cpp-ci.yml/badge.svg)](https://github.com/GizzZmo/Infiniti/actions/workflows/cpp-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 
