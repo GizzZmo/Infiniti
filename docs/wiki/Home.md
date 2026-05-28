@@ -11,6 +11,7 @@ Welcome to the Infiniti wiki — a collection of in-depth guides and background 
 | [Getting Started](Getting-Started.md) | Step-by-step guide from cloning to your first game |
 | [Architecture](Architecture.md) | Deep-dive into the engine internals and design decisions |
 | [Roadmap](Roadmap.md) | Planned features and future direction |
+| [UI/UX Roadmap](UI-UX-Roadmap.md) | Web platform interface priorities and delivery phases |
 
 ---
 

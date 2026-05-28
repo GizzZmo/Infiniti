@@ -62,6 +62,7 @@ This page tracks planned features, known limitations, and the long-term directio
 
 | Feature | Description |
 |---------|-------------|
+| UI/UX roadmap execution | Deliver the staged usability, clarity, authentication, performance, and security plan in [UI/UX Roadmap](UI-UX-Roadmap.md) |
 | OAuth login | Sign in with GitHub / Google |
 | Rate limiting | Per-IP and per-user rate limits on all API endpoints |
 | Admin dashboard | UI for reviewing KYC submissions and transaction anomalies |
