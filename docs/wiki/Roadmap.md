@@ -20,6 +20,7 @@ This page tracks planned features, known limitations, and the long-term directio
 | Internal Iterative Deepening (IID) | At PV nodes with no TT move, do a shallow search first to seed move ordering |
 | Singular extensions | Extend the search depth when one move is clearly better than all alternatives |
 | History-based pruning | Use history scores to prune or reduce quiet moves more aggressively |
+| Opening book support | Optional opening-book integration so common theory does not need to be rediscovered every game |
 | Multi-threaded search (Lazy SMP) | Run multiple threads on the same tree with shared hash table |
 
 ---
@@ -72,10 +73,14 @@ This page tracks planned features, known limitations, and the long-term directio
 
 ## Known Limitations
 
-- **Single-threaded search** — the engine uses only one CPU core; strength is limited on modern multi-core hardware.
-- **No tablebase support** — endgame positions with few pieces are not played perfectly.
-- **No opening book** — all moves come from the engine's own search, even in well-known opening theory.
-- **NNUE requires a compatible file** — no network is bundled; without one the engine falls back to HCE.
+These limitations are known gaps in the current engine, and each one is either tied to an explicit roadmap item or already has a practical workaround.
+
+| Limitation | Current impact | Planned response / workaround |
+|------------|----------------|-------------------------------|
+| Single-threaded search | The engine uses only one CPU core, so it leaves modern multi-core hardware underused. | Planned: **Multi-threaded search (Lazy SMP)** in the search roadmap. |
+| No tablebase support | Endgames with only a few pieces are still approximated by search and evaluation instead of being played perfectly. | Planned: **Endgame tablebases** in the evaluation roadmap. |
+| No opening book | The engine spends time searching well-known opening theory from scratch. | Planned: **Opening book support** in the search roadmap. |
+| NNUE requires a compatible file | NNUE does not work out of the box unless the user supplies a matching network file, so the engine falls back to HCE by default. | Planned: **Bundled default network** in the NNUE roadmap. Today, users can set `EvalFile` to a compatible `.nnue` file. |
 
 ---
 
