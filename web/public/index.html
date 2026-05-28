@@ -2,65 +2,385 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Infiniti Web Platform</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; }
-    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
-    input, button, select { margin: 0.2rem; }
-    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --border: #d7deea;
+      --text: #18212f;
+      --muted: #5f6b7a;
+      --primary: #2253d1;
+      --primary-soft: #edf3ff;
+      --success: #0f7a43;
+      --success-soft: #ebfff4;
+      --warning: #8a5a00;
+      --warning-soft: #fff8e6;
+      --danger: #a12626;
+      --danger-soft: #fff0f0;
+      --shadow: 0 16px 40px rgba(24, 33, 47, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #f8faff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    a { color: var(--primary); }
+    .hero, section, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 1.5rem; margin-bottom: 1rem; }
+    .hero h1 { margin: 0 0 0.75rem; font-size: 2rem; }
+    .hero p { margin: 0.4rem 0; color: var(--muted); line-height: 1.5; }
+    .hero-links, .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .hero-links a, .quick-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.5rem;
+      padding: 0.65rem 0.95rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    .stack { display: grid; gap: 1rem; }
+    section, .panel { padding: 1.25rem; }
+    h2, h3 { margin: 0 0 0.75rem; }
+    .section-copy, .helper-text, .session-note, .pillars li { color: var(--muted); }
+    .pillars {
+      margin: 0.75rem 0 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .session-grid, .row {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .session-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top: 1rem; }
+    .row { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    label {
+      display: grid;
+      gap: 0.35rem;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+    input, button {
+      font: inherit;
+      border-radius: 12px;
+    }
+    input {
+      width: 100%;
+      min-height: 2.75rem;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid #c4cedf;
+      background: #fff;
+      color: var(--text);
+    }
+    input:focus, button:focus, a:focus {
+      outline: 3px solid rgba(34, 83, 209, 0.18);
+      outline-offset: 2px;
+    }
+    button {
+      min-height: 2.75rem;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid #c4cedf;
+    }
+    button:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+    }
+    .status-card {
+      padding: 0.9rem;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fafcff;
+    }
+    .status-card strong { display: block; margin-bottom: 0.3rem; }
+    .status-card span { color: var(--muted); }
+    .session-card {
+      border-radius: 16px;
+      padding: 1rem;
+      background: var(--primary-soft);
+      border: 1px solid #cfe0ff;
+    }
+    .session-card.warning {
+      background: var(--warning-soft);
+      border-color: #f0d28a;
+    }
+    .session-card.success {
+      background: var(--success-soft);
+      border-color: #9ed9b9;
+    }
+    .session-card.danger {
+      background: var(--danger-soft);
+      border-color: #efb4b4;
+    }
+    .token-note {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    #qrWrap {
+      min-height: 1rem;
+      margin: 1rem 0;
+    }
+    #qrWrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    #output {
+      margin: 1rem 0 0;
+      padding: 1rem;
+      border-radius: 16px;
+      background: #101826;
+      color: #eef4ff;
+      overflow: auto;
+      min-height: 180px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .feedback {
+      margin-top: 0.85rem;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      display: none;
+      line-height: 1.5;
+    }
+    .feedback.show { display: block; }
+    .feedback.info {
+      background: var(--primary-soft);
+      border-color: #cfe0ff;
+      color: #12317c;
+    }
+    .feedback.success {
+      background: var(--success-soft);
+      border-color: #9ed9b9;
+      color: var(--success);
+    }
+    .feedback.error {
+      background: var(--danger-soft);
+      border-color: #efb4b4;
+      color: var(--danger);
+    }
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 0.55rem;
+      color: var(--primary);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <h1>Infiniti Account Portal</h1>
-  <p><a href="/kyc.html">KYC Upload</a> · <a href="/transactions.html">Transactions</a> · <a href="/favorites.html">Favorite Games</a> · <a href="/admin-kyc.html">Admin KYC Panel</a></p>
+  <main>
+    <section class="hero">
+      <span class="eyebrow">Stage 1 / Phase 1</span>
+      <h1>Infiniti Account Portal</h1>
+      <p>Use the portal to create an account, sign in securely, manage 2FA, and move to KYC, transactions, favourites, and admin review with a shared session.</p>
+      <ul class="pillars">
+        <li><strong>Usability:</strong> clear sections, direct guidance, and fewer dead ends.</li>
+        <li><strong>Clarity:</strong> visible account state and action-specific feedback.</li>
+        <li><strong>Authentication:</strong> safer sign-in flow with 2FA cues and session controls.</li>
+        <li><strong>Performance:</strong> fewer duplicate requests and lighter DOM updates.</li>
+        <li><strong>Security:</strong> reduced token exposure and safer QR rendering.</li>
+      </ul>
+      <div class="hero-links">
+        <a href="/kyc.html">KYC Upload</a>
+        <a href="/transactions.html">Transactions</a>
+        <a href="/favorites.html">Favorite Games</a>
+        <a href="/admin-kyc.html">Admin KYC Panel</a>
+      </div>
+    </section>
 
-  <section>
-    <h2>Register</h2>
-    <div class="row">
-      <input id="regEmail" placeholder="Email" />
-      <input id="regPassword" type="password" placeholder="Password" />
-      <button id="registerBtn">Register</button>
-    </div>
-  </section>
+    <div class="layout">
+      <div class="stack">
+        <section>
+          <h2>Create account</h2>
+          <p class="section-copy">Start with a verified account. Passwords need at least 8 characters with uppercase, lowercase, and a number.</p>
+          <div class="row">
+            <label for="regEmail">
+              Email address
+              <input id="regEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </label>
+            <label for="regPassword">
+              Password
+              <input id="regPassword" type="password" placeholder="StrongPass1" autocomplete="new-password" required />
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="registerBtn">Create account</button>
+          </div>
+          <p class="helper-text">After registration, verify your email before accessing protected flows.</p>
+        </section>
 
-  <section>
-    <h2>Login</h2>
-    <div class="row">
-      <input id="loginEmail" placeholder="Email" />
-      <input id="loginPassword" type="password" placeholder="Password" />
-      <button id="loginBtn">Login</button>
-    </div>
-    <div class="row">
-      <input id="loginOtp" placeholder="OTP (if required)" />
-      <input id="loginRecovery" placeholder="Recovery Code (optional)" />
-      <button id="submit2faBtn">Submit 2FA</button>
-    </div>
-  </section>
+        <section>
+          <h2>Sign in</h2>
+          <p class="section-copy">Sign in with your password. If 2FA is enabled, finish the second step with an authenticator code or a recovery code.</p>
+          <div class="row">
+            <label for="loginEmail">
+              Email address
+              <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </label>
+            <label for="loginPassword">
+              Password
+              <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="loginBtn">Sign in</button>
+          </div>
+          <div class="row">
+            <label for="loginOtp">
+              Authenticator code
+              <input id="loginOtp" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" />
+            </label>
+            <label for="loginRecovery">
+              Recovery code
+              <input id="loginRecovery" placeholder="Optional backup code" autocomplete="off" />
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="submit2faBtn" class="secondary">Finish 2FA sign-in</button>
+          </div>
+        </section>
 
-  <section>
-    <h2>Email Verification & Password Reset</h2>
-    <button id="resendVerifyBtn">Resend verification email</button>
-    <div class="row">
-      <input id="forgotEmail" placeholder="Email for reset" />
-      <button id="forgotBtn">Send reset email</button>
-    </div>
-  </section>
+        <section>
+          <h2>Recovery and verification</h2>
+          <p class="section-copy">Keep your account reachable. Resend your verification email when needed or request a password reset.</p>
+          <div class="button-row">
+            <button id="resendVerifyBtn" class="secondary">Resend verification email</button>
+          </div>
+          <div class="row">
+            <label for="forgotEmail">
+              Reset email address
+              <input id="forgotEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="forgotBtn" class="secondary">Send password reset</button>
+          </div>
+        </section>
 
-  <section>
-    <h2>2FA Management</h2>
-    <button id="setup2faBtn">Start 2FA setup</button>
-    <div id="qrWrap"></div>
-    <div class="row">
-      <input id="enableOtp" placeholder="OTP to enable" />
-      <button id="enable2faBtn">Enable 2FA</button>
-    </div>
-    <div class="row">
-      <input id="disableOtp" placeholder="OTP to disable" />
-      <button id="disable2faBtn">Disable 2FA</button>
-    </div>
-  </section>
+        <section>
+          <h2>2FA management</h2>
+          <p class="section-copy">Use two-factor authentication to protect sensitive actions. Setup only works for an authenticated session.</p>
+          <div class="button-row">
+            <button id="setup2faBtn">Start 2FA setup</button>
+          </div>
+          <div id="qrWrap" aria-live="polite"></div>
+          <div class="row">
+            <label for="enableOtp">
+              OTP to enable 2FA
+              <input id="enableOtp" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" />
+            </label>
+            <label for="disableOtp">
+              OTP to disable 2FA
+              <input id="disableOtp" inputmode="numeric" placeholder="123456" autocomplete="one-time-code" />
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="enable2faBtn">Enable 2FA</button>
+            <button id="disable2faBtn" class="secondary">Disable 2FA</button>
+          </div>
+        </section>
+      </div>
 
-  <pre id="output"></pre>
+      <div class="stack">
+        <aside class="panel" aria-labelledby="sessionTitle">
+          <h2 id="sessionTitle">Session status</h2>
+          <div id="sessionCard" class="session-card warning">
+            <strong id="sessionHeadline">No active session</strong>
+            <p id="sessionSummary" class="session-note">Sign in to access KYC, transactions, favourites, and admin tools.</p>
+          </div>
+          <div class="session-grid">
+            <div class="status-card">
+              <strong>Email</strong>
+              <span id="sessionEmail">Not signed in</span>
+            </div>
+            <div class="status-card">
+              <strong>Verification</strong>
+              <span id="sessionVerified">Unknown</span>
+            </div>
+            <div class="status-card">
+              <strong>2FA</strong>
+              <span id="sessionTwoFactor">Unknown</span>
+            </div>
+            <div class="status-card">
+              <strong>Access</strong>
+              <span id="sessionAccess">Standard</span>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="refreshSessionBtn" class="secondary">Refresh session</button>
+            <button id="signOutBtn" class="secondary">Sign out</button>
+          </div>
+          <p class="token-note">The shared session stays in local storage so the linked tools can reuse it. The UI avoids echoing raw auth tokens back into the page.</p>
+        </aside>
+
+        <aside class="panel">
+          <h2>Quick guidance</h2>
+          <div id="feedback" class="feedback info show" role="status" aria-live="polite">
+            Start by creating an account or signing in with an existing one.
+          </div>
+          <div class="quick-actions">
+            <a href="/verify-email.html">Open verify page</a>
+            <a href="/reset-password.html">Open reset page</a>
+          </div>
+          <pre id="output"></pre>
+        </aside>
+      </div>
+    </div>
+  </main>
 
   <script src="/main.js"></script>
 </body>
