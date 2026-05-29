@@ -1,16 +1,69 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8" /><title>Admin KYC Review</title></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin KYC Review</title>
+  <link rel="stylesheet" href="/portal-shell.css" />
+</head>
 <body>
-  <h1>Admin KYC Review Panel</h1>
-  <p><a href="/index.html">Back</a></p>
-  <label>Auth token <input id="token" size="80" /></label>
-  <button id="loadBtn">Load Submissions</button>
-  <pre id="output"></pre>
+  <nav class="portal-nav" aria-label="Primary">
+    <div class="portal-nav-inner">
+      <a class="portal-brand" href="/index.html">Infiniti Portal</a>
+      <a class="portal-link" href="/kyc.html">KYC</a>
+      <a class="portal-link" href="/transactions.html">Transactions</a>
+      <a class="portal-link" href="/favorites.html">Favourites</a>
+      <a class="portal-link active" href="/admin-kyc.html">Admin Review</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="shell-layout">
+      <section class="panel">
+        <h1>Admin KYC review panel</h1>
+        <p class="helper">Load submissions and review outcomes from a consistent admin workflow.</p>
+
+        <label>
+          Shared auth token
+          <input id="token" autocomplete="off" />
+        </label>
+
+        <div class="button-row">
+          <button id="loadBtn">Load submissions</button>
+        </div>
+
+        <div id="feedback" class="feedback info" role="status" aria-live="polite">Use an admin token, then load submissions to start reviews.</div>
+        <pre id="output" class="output">No submission data loaded yet.</pre>
+      </section>
+
+      <aside class="panel">
+        <h2>Workflow cues</h2>
+        <ul class="summary-list">
+          <li>Load submissions before calling <code>reviewSubmission</code>.</li>
+          <li>Use explicit status values: <code>approved</code> or <code>rejected</code>.</li>
+          <li>Attach a short audit comment for each review decision.</li>
+        </ul>
+        <p class="next-step"><strong>Next safe step:</strong> review pending IDs in the output panel before submitting a decision.</p>
+      </aside>
+    </div>
+  </main>
+
   <script>
     const tokenInput = document.getElementById('token');
-    tokenInput.value = localStorage.getItem('authToken') || '';
+    const loadBtn = document.getElementById('loadBtn');
+    const feedback = document.getElementById('feedback');
     const output = document.getElementById('output');
+
+    tokenInput.value = localStorage.getItem('authToken') || '';
+
+    function setLoading(isLoading) {
+      loadBtn.disabled = isLoading;
+    }
+
+    function showFeedback(type, message) {
+      feedback.className = `feedback ${type}`;
+      feedback.textContent = message;
+    }
 
     async function call(url, options = {}) {
       const token = tokenInput.value.trim();
@@ -23,26 +76,52 @@
           Authorization: token ? 'Token ' + token : '',
         },
       });
-      return response.json();
+      const text = await response.text();
+      const payload = (() => { try { return JSON.parse(text); } catch { return text; } })();
+      if (!response.ok) {
+        throw new Error(typeof payload === 'string' ? payload : JSON.stringify(payload));
+      }
+      return payload;
     }
 
     async function load() {
-      const data = await call('/api/admin/kyc');
-      output.textContent = JSON.stringify(data, null, 2);
-      if (!data.submissions) return;
+      setLoading(true);
+      showFeedback('info', 'Loading KYC submissions...');
+      try {
+        const data = await call('/api/admin/kyc');
+        output.textContent = JSON.stringify(data, null, 2);
 
-      const actions = data.submissions.slice(0, 5).map((s) => `Submission ${s.id}: ${s.status}`).join('\n');
-      output.textContent += '\n\nUse console to run reviewSubmission(id, "approved"|"rejected", "comment")\n' + actions;
-      window.reviewSubmission = async (id, status, comment) => {
-        const review = await call('/api/admin/kyc/' + id + '/review', {
-          method: 'POST',
-          body: JSON.stringify({ status, comment }),
-        });
-        output.textContent = JSON.stringify(review, null, 2);
-      };
+        const submissions = Array.isArray(data.submissions) ? data.submissions : [];
+        if (submissions.length === 0) {
+          showFeedback('success', 'No submissions available for review.');
+          return;
+        }
+
+        const actions = submissions.slice(0, 5).map((s) => `Submission ${s.id}: ${s.status}`).join('\n');
+        output.textContent += '\n\nUse console: reviewSubmission(id, "approved"|"rejected", "comment")\n' + actions;
+        showFeedback('success', `Loaded ${submissions.length} submission(s).`);
+
+        window.reviewSubmission = async (id, status, comment) => {
+          showFeedback('info', `Submitting ${status} review for #${id}...`);
+          try {
+            const review = await call('/api/admin/kyc/' + id + '/review', {
+              method: 'POST',
+              body: JSON.stringify({ status, comment }),
+            });
+            output.textContent = JSON.stringify(review, null, 2);
+            showFeedback('success', `Review submitted for #${id}.`);
+          } catch (error) {
+            showFeedback('error', error.message || 'Review submission failed.');
+          }
+        };
+      } catch (error) {
+        showFeedback('error', error.message || 'Failed to load submissions.');
+      } finally {
+        setLoading(false);
+      }
     }
 
-    document.getElementById('loadBtn').onclick = load;
+    loadBtn.onclick = load;
   </script>
 </body>
 </html>

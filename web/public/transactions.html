@@ -1,25 +1,79 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8" /><title>Transactions</title></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transactions</title>
+  <link rel="stylesheet" href="/portal-shell.css" />
+</head>
 <body>
-  <h1>Transaction Filtering & Search</h1>
-  <p><a href="/index.html">Back</a></p>
-  <label>Auth token <input id="token" size="80" /></label>
-  <div>
-    <input id="type" placeholder="type" />
-    <input id="status" placeholder="status" />
-    <input id="minAmount" type="number" step="0.01" placeholder="min" />
-    <input id="maxAmount" type="number" step="0.01" placeholder="max" />
-    <input id="startDate" placeholder="start date (YYYY-MM-DD)" />
-    <input id="endDate" placeholder="end date (YYYY-MM-DD)" />
-    <button id="searchBtn">Search</button>
-    <button id="exportBtn">Export CSV</button>
-  </div>
-  <pre id="output"></pre>
+  <nav class="portal-nav" aria-label="Primary">
+    <div class="portal-nav-inner">
+      <a class="portal-brand" href="/index.html">Infiniti Portal</a>
+      <a class="portal-link" href="/kyc.html">KYC</a>
+      <a class="portal-link active" href="/transactions.html">Transactions</a>
+      <a class="portal-link" href="/favorites.html">Favourites</a>
+      <a class="portal-link" href="/admin-kyc.html">Admin Review</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="shell-layout">
+      <section class="panel">
+        <h1>Transaction filtering and export</h1>
+        <p class="helper">Use focused filters, review the result summary, then export a CSV when the query looks correct.</p>
+
+        <label>
+          Shared auth token
+          <input id="token" autocomplete="off" />
+        </label>
+
+        <label>Type <input id="type" placeholder="deposit, withdrawal, trade..." /></label>
+        <label>Status <input id="status" placeholder="pending, completed..." /></label>
+        <label>Minimum amount <input id="minAmount" type="number" step="0.01" placeholder="0.00" /></label>
+        <label>Maximum amount <input id="maxAmount" type="number" step="0.01" placeholder="1000.00" /></label>
+        <label>Start date (YYYY-MM-DD) <input id="startDate" placeholder="2026-01-01" /></label>
+        <label>End date (YYYY-MM-DD) <input id="endDate" placeholder="2026-12-31" /></label>
+
+        <div class="button-row">
+          <button id="searchBtn">Search transactions</button>
+          <button id="exportBtn" class="secondary">Export CSV</button>
+        </div>
+
+        <div id="feedback" class="feedback info" role="status" aria-live="polite">Apply at least one filter, then search to get a clear result set.</div>
+        <pre id="output" class="output">No query results yet.</pre>
+      </section>
+
+      <aside class="panel">
+        <h2>Workflow cues</h2>
+        <ul class="summary-list">
+          <li>Search first to validate the result set before exporting.</li>
+          <li>Narrow date and amount filters to avoid oversized payloads.</li>
+          <li>Use the same token as other pages to keep workflow continuity.</li>
+        </ul>
+        <p class="next-step"><strong>Next safe step:</strong> confirm the summary count, then export only the needed range.</p>
+      </aside>
+    </div>
+  </main>
+
   <script>
     const tokenInput = document.getElementById('token');
-    tokenInput.value = localStorage.getItem('authToken') || '';
     const output = document.getElementById('output');
+    const feedback = document.getElementById('feedback');
+    const searchBtn = document.getElementById('searchBtn');
+    const exportBtn = document.getElementById('exportBtn');
+
+    tokenInput.value = localStorage.getItem('authToken') || '';
+
+    function setLoading(isLoading) {
+      searchBtn.disabled = isLoading;
+      exportBtn.disabled = isLoading;
+    }
+
+    function showFeedback(type, message) {
+      feedback.className = `feedback ${type}`;
+      feedback.textContent = message;
+    }
 
     function queryString() {
       const params = new URLSearchParams();
@@ -30,30 +84,61 @@
       return params.toString();
     }
 
-    async function search() {
+    async function requestText(url) {
       const token = tokenInput.value.trim();
       localStorage.setItem('authToken', token);
-      const response = await fetch('/api/transactions?' + queryString(), {
+      const response = await fetch(url, {
         headers: { Authorization: token ? 'Token ' + token : '' },
       });
       const text = await response.text();
-      output.textContent = text;
+      if (!response.ok) {
+        throw new Error(text || `Request failed (${response.status})`);
+      }
+      return text;
     }
 
-    document.getElementById('searchBtn').onclick = search;
-    document.getElementById('exportBtn').onclick = async () => {
-      const token = tokenInput.value.trim();
-      localStorage.setItem('authToken', token);
-      const response = await fetch('/api/transactions/export.csv?' + queryString(), {
-        headers: { Authorization: token ? 'Token ' + token : '' },
-      });
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'transactions.csv';
-      a.click();
-      URL.revokeObjectURL(url);
+    searchBtn.onclick = async () => {
+      setLoading(true);
+      showFeedback('info', 'Searching transactions...');
+      try {
+        const text = await requestText('/api/transactions?' + queryString());
+        const parsed = (() => { try { return JSON.parse(text); } catch { return text; } })();
+        output.textContent = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+        const count = Array.isArray(parsed?.transactions) ? parsed.transactions.length : null;
+        showFeedback('success', count === null ? 'Search complete.' : `Search complete: ${count} result(s).`);
+      } catch (error) {
+        showFeedback('error', error.message || 'Search failed.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    exportBtn.onclick = async () => {
+      setLoading(true);
+      showFeedback('info', 'Preparing CSV export...');
+      try {
+        const token = tokenInput.value.trim();
+        localStorage.setItem('authToken', token);
+        const response = await fetch('/api/transactions/export.csv?' + queryString(), {
+          headers: { Authorization: token ? 'Token ' + token : '' },
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Export failed (${response.status})`);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transactions.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showFeedback('success', 'CSV export downloaded.');
+      } catch (error) {
+        showFeedback('error', error.message || 'Export failed.');
+      } finally {
+        setLoading(false);
+      }
     };
   </script>
 </body>

@@ -1,22 +1,75 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8" /><title>Favorite Games</title></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Favorite Games</title>
+  <link rel="stylesheet" href="/portal-shell.css" />
+</head>
 <body>
-  <h1>Favorite Games</h1>
-  <p><a href="/index.html">Back</a></p>
-  <label>Auth token <input id="token" size="80" /></label>
-  <button id="loadBtn">Load Games & Favorites</button>
-  <div>
-    <h2>Games</h2>
-    <ul id="games"></ul>
-  </div>
-  <div>
-    <h2>Favorites</h2>
-    <pre id="favorites"></pre>
-  </div>
+  <nav class="portal-nav" aria-label="Primary">
+    <div class="portal-nav-inner">
+      <a class="portal-brand" href="/index.html">Infiniti Portal</a>
+      <a class="portal-link" href="/kyc.html">KYC</a>
+      <a class="portal-link" href="/transactions.html">Transactions</a>
+      <a class="portal-link active" href="/favorites.html">Favourites</a>
+      <a class="portal-link" href="/admin-kyc.html">Admin Review</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="shell-layout">
+      <section class="panel">
+        <h1>Favorite games</h1>
+        <p class="helper">Load games once, then add or remove favourites with immediate status feedback.</p>
+
+        <label>
+          Shared auth token
+          <input id="token" autocomplete="off" />
+        </label>
+
+        <div class="button-row">
+          <button id="loadBtn">Load games and favourites</button>
+        </div>
+
+        <div id="feedback" class="feedback info" role="status" aria-live="polite">Load your games to manage favourites.</div>
+
+        <h2>Games</h2>
+        <ul id="games" class="summary-list"></ul>
+
+        <h2>Favorites</h2>
+        <pre id="favorites" class="output">No favourites loaded yet.</pre>
+      </section>
+
+      <aside class="panel">
+        <h2>Workflow cues</h2>
+        <ul class="summary-list">
+          <li>Load once to see all available games and your current favourites.</li>
+          <li>Use “Favorite” to add with default tags and notes.</li>
+          <li>Use “Remove” to quickly clean up your list.</li>
+        </ul>
+        <p class="next-step"><strong>Next safe step:</strong> confirm changes in the favourites JSON panel after every action.</p>
+      </aside>
+    </div>
+  </main>
+
   <script>
     const tokenInput = document.getElementById('token');
+    const loadBtn = document.getElementById('loadBtn');
+    const feedback = document.getElementById('feedback');
+    const gamesList = document.getElementById('games');
+    const favoritesPanel = document.getElementById('favorites');
+
     tokenInput.value = localStorage.getItem('authToken') || '';
+
+    function setLoading(isLoading) {
+      loadBtn.disabled = isLoading;
+    }
+
+    function showFeedback(type, message) {
+      feedback.className = `feedback ${type}`;
+      feedback.textContent = message;
+    }
 
     async function api(url, options = {}) {
       const token = tokenInput.value.trim();
@@ -29,45 +82,97 @@
           Authorization: token ? 'Token ' + token : '',
         },
       });
-      return response.json();
+      const text = await response.text();
+      const payload = (() => { try { return JSON.parse(text); } catch { return text; } })();
+      if (!response.ok) {
+        throw new Error(typeof payload === 'string' ? payload : JSON.stringify(payload));
+      }
+      return payload;
     }
 
-    async function load() {
-      const gamesData = await api('/api/games');
-      const list = document.getElementById('games');
-      list.innerHTML = '';
-      gamesData.games.forEach((game) => {
-        const li = document.createElement('li');
-        li.innerHTML = `${game.name} <button data-id="${game.id}">Favorite</button> <button data-rm="${game.id}">Remove</button>`;
-        list.appendChild(li);
-      });
+    function createGameItem(game) {
+      const li = document.createElement('li');
+      const name = document.createElement('strong');
+      name.textContent = game.name;
 
-      document.querySelectorAll('[data-id]').forEach((btn) => {
-        btn.onclick = async () => {
-          await api('/api/games/' + btn.dataset.id + '/favorite', {
+      const buttonWrap = document.createElement('div');
+      buttonWrap.className = 'button-row';
+
+      const favoriteBtn = document.createElement('button');
+      favoriteBtn.textContent = 'Favorite';
+      favoriteBtn.onclick = async () => {
+        setLoading(true);
+        showFeedback('info', `Adding ${game.name} to favourites...`);
+        try {
+          await api('/api/games/' + game.id + '/favorite', {
             method: 'POST',
             body: JSON.stringify({ tags: 'opening', notes: 'Interesting line' }),
           });
           await refreshFavorites();
-        };
-      });
+          showFeedback('success', `${game.name} added to favourites.`);
+        } catch (error) {
+          showFeedback('error', error.message || 'Failed to add favourite.');
+        } finally {
+          setLoading(false);
+        }
+      };
 
-      document.querySelectorAll('[data-rm]').forEach((btn) => {
-        btn.onclick = async () => {
-          await api('/api/games/' + btn.dataset.rm + '/favorite', { method: 'DELETE' });
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Remove';
+      removeBtn.className = 'secondary';
+      removeBtn.onclick = async () => {
+        setLoading(true);
+        showFeedback('info', `Removing ${game.name} from favourites...`);
+        try {
+          await api('/api/games/' + game.id + '/favorite', { method: 'DELETE' });
           await refreshFavorites();
-        };
-      });
+          showFeedback('success', `${game.name} removed from favourites.`);
+        } catch (error) {
+          showFeedback('error', error.message || 'Failed to remove favourite.');
+        } finally {
+          setLoading(false);
+        }
+      };
 
-      await refreshFavorites();
+      buttonWrap.appendChild(favoriteBtn);
+      buttonWrap.appendChild(removeBtn);
+      li.appendChild(name);
+      li.appendChild(buttonWrap);
+      return li;
+    }
+
+    async function load() {
+      setLoading(true);
+      showFeedback('info', 'Loading games and favourites...');
+      try {
+        const gamesData = await api('/api/games');
+        gamesList.innerHTML = '';
+
+        if (!Array.isArray(gamesData.games) || gamesData.games.length === 0) {
+          const empty = document.createElement('li');
+          empty.textContent = 'No games available yet.';
+          gamesList.appendChild(empty);
+        } else {
+          gamesData.games.forEach((game) => {
+            gamesList.appendChild(createGameItem(game));
+          });
+        }
+
+        await refreshFavorites();
+        showFeedback('success', `Loaded ${Array.isArray(gamesData.games) ? gamesData.games.length : 0} game(s).`);
+      } catch (error) {
+        showFeedback('error', error.message || 'Failed to load games.');
+      } finally {
+        setLoading(false);
+      }
     }
 
     async function refreshFavorites() {
       const favorites = await api('/api/users/me/favorites');
-      document.getElementById('favorites').textContent = JSON.stringify(favorites, null, 2);
+      favoritesPanel.textContent = JSON.stringify(favorites, null, 2);
     }
 
-    document.getElementById('loadBtn').onclick = load;
+    loadBtn.onclick = load;
   </script>
 </body>
 </html>
