@@ -1,22 +1,85 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8" /><title>KYC Upload</title></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KYC Upload</title>
+  <link rel="stylesheet" href="/portal-shell.css" />
+</head>
 <body>
-  <h1>KYC Document Upload</h1>
-  <p><a href="/index.html">Back</a></p>
-  <label>Auth token <input id="token" /></label>
-  <select id="documentType">
-    <option value="government_id">Government ID</option>
-    <option value="proof_of_address">Proof of Address</option>
-  </select>
-  <input type="file" id="file" />
-  <button id="uploadBtn">Upload</button>
-  <button id="refreshBtn">Refresh My Submissions</button>
-  <pre id="output"></pre>
+  <nav class="portal-nav" aria-label="Primary">
+    <div class="portal-nav-inner">
+      <a class="portal-brand" href="/index.html">Infiniti Portal</a>
+      <a class="portal-link active" href="/kyc.html">KYC</a>
+      <a class="portal-link" href="/transactions.html">Transactions</a>
+      <a class="portal-link" href="/favorites.html">Favourites</a>
+      <a class="portal-link" href="/admin-kyc.html">Admin Review</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="shell-layout">
+      <section class="panel">
+        <h1>KYC document upload</h1>
+        <p class="helper">Upload one document at a time and refresh your submissions to confirm status changes.</p>
+
+        <label>
+          Shared auth token
+          <input id="token" autocomplete="off" />
+        </label>
+
+        <label>
+          Document type
+          <select id="documentType">
+            <option value="government_id">Government ID</option>
+            <option value="proof_of_address">Proof of Address</option>
+          </select>
+        </label>
+
+        <label>
+          Document file
+          <input type="file" id="file" />
+        </label>
+
+        <div class="button-row">
+          <button id="uploadBtn">Upload document</button>
+          <button id="refreshBtn" class="secondary">Refresh submissions</button>
+        </div>
+
+        <div id="feedback" class="feedback info" role="status" aria-live="polite">Add your token, choose a document, and upload to begin.</div>
+        <pre id="output" class="output">No submissions loaded yet.</pre>
+      </section>
+
+      <aside class="panel">
+        <h2>Workflow cues</h2>
+        <ul class="summary-list">
+          <li>Use the same token as the account portal for consistent access.</li>
+          <li>Upload a file before requesting a refresh to avoid empty responses.</li>
+          <li>After upload succeeds, open Admin Review to track approval decisions.</li>
+        </ul>
+        <p class="next-step"><strong>Next safe step:</strong> review the refreshed submission list and verify your status.</p>
+      </aside>
+    </div>
+  </main>
+
   <script>
     const output = document.getElementById('output');
+    const feedback = document.getElementById('feedback');
     const tokenInput = document.getElementById('token');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+
     tokenInput.value = localStorage.getItem('authToken') || '';
+
+    function setLoading(isLoading) {
+      uploadBtn.disabled = isLoading;
+      refreshBtn.disabled = isLoading;
+    }
+
+    function showFeedback(type, message) {
+      feedback.className = `feedback ${type}`;
+      feedback.textContent = message;
+    }
 
     async function call(url, options) {
       const token = tokenInput.value.trim();
@@ -29,18 +92,47 @@
         },
       });
       const text = await response.text();
-      output.textContent = text;
+      const payload = (() => { try { return JSON.parse(text); } catch { return text; } })();
+      if (!response.ok) {
+        throw new Error(typeof payload === 'string' ? payload : JSON.stringify(payload));
+      }
+      output.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+      return payload;
     }
 
-    document.getElementById('uploadBtn').onclick = async () => {
-      const formData = new FormData();
-      formData.append('documentType', document.getElementById('documentType').value);
-      formData.append('document', document.getElementById('file').files[0]);
-      await call('/api/kyc/upload', { method: 'POST', body: formData });
+    uploadBtn.onclick = async () => {
+      const file = document.getElementById('file').files[0];
+      if (!file) {
+        showFeedback('error', 'Choose a document file before uploading.');
+        return;
+      }
+      setLoading(true);
+      showFeedback('info', 'Uploading document...');
+      try {
+        const formData = new FormData();
+        formData.append('documentType', document.getElementById('documentType').value);
+        formData.append('document', file);
+        await call('/api/kyc/upload', { method: 'POST', body: formData });
+        showFeedback('success', 'Upload complete. Refresh submissions to confirm status.');
+      } catch (error) {
+        showFeedback('error', error.message || 'Upload failed.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    document.getElementById('refreshBtn').onclick = async () => {
-      await call('/api/kyc/me', { method: 'GET' });
+    refreshBtn.onclick = async () => {
+      setLoading(true);
+      showFeedback('info', 'Fetching your submissions...');
+      try {
+        const data = await call('/api/kyc/me', { method: 'GET' });
+        const count = Array.isArray(data?.submissions) ? data.submissions.length : 0;
+        showFeedback('success', count ? `Loaded ${count} submission(s).` : 'No submissions found yet.');
+      } catch (error) {
+        showFeedback('error', error.message || 'Failed to refresh submissions.');
+      } finally {
+        setLoading(false);
+      }
     };
   </script>
 </body>

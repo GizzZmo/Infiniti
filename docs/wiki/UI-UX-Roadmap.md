@@ -2,7 +2,7 @@
 
 This roadmap focuses the web platform on five pillars: **usability**, **clarity**, **authentication**, **performance**, and **security**.
 
-> Status in this branch: **Stage 1 / Phase 1 complete**
+> Status in this branch: **Stage 1 / Phase 2 complete**
 
 ---
 
@@ -17,7 +17,7 @@ This roadmap focuses the web platform on five pillars: **usability**, **clarity*
 - Reduce accidental token exposure by keeping tokens in storage for navigation while showing safer success summaries in the UI.
 - Replace unsafe HTML injection in the 2FA setup flow with DOM-based rendering.
 
-### Phase 2 — Shared Navigation + Workflow Consistency
+### Phase 2 — Shared Navigation + Workflow Consistency *(complete in this branch)*
 
 - Apply one shared visual shell across account, KYC, transactions, favourites, and admin pages.
 - Standardise feedback states, empty states, error handling, and primary/secondary actions.
